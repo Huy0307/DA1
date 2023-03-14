@@ -1,0 +1,20 @@
+#ifndef FINGERPRINT_H
+#define FINGERPRINT_H
+
+#include <SoftwareSerial.h>
+#include <Adafruit_Fingerprint.h>
+
+class Fingerprint {
+  public:
+    Fingerprint(int rxPin, int txPin);
+    void begin();
+    bool verifyPassword();
+    uint8_t getFingerprintEnroll();
+    uint8_t getFingerprintID();
+    uint8_t readnumber(void);
+    Adafruit_Fingerprint finger;
+  private:
+    SoftwareSerial mySerial;
+};
+
+#endif

@@ -1,0 +1,16 @@
+Mua hàng:330K+380k
+Arduino UNO R3: 200k
+Module YS-29: 75k
+Dây bus: 12k
+Điện trở: 3k
+Đế test: 40k
+Fingerprint sensor: 380k
+
+
+Arduino UNO R3 (ATmega328P-PU)
+Module YS-29 (cảm biến vật thể)
+R308 (cảm biến vân tay)
+MLX90614 (Cảm biến nhiệt độ hồng ngoại)
+Buzzer
+Laser module
+Oled 0.96 inch

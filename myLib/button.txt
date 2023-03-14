@@ -1,0 +1,42 @@
+const int buttonPin = 2;  // Pin của nút bấm
+int buttonState = HIGH;   // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
+int lastButtonState = HIGH; // Trạng thái trước đó của nút bấm
+int mode = 1; // Trạng thái ban đầu của chương trình
+
+void setup() {
+  pinMode(buttonPin, INPUT_PULLUP); // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
+  Serial.begin(9600); // Bật cổng Serial để hiển thị trạng thái của chương trình
+}
+
+void loop() {
+  buttonState = digitalRead(buttonPin); // Đọc trạng thái hiện tại của nút bấm
+
+  // Nếu nút bấm được nhấn
+  if (buttonState == LOW && lastButtonState == HIGH) {
+    // Tăng mode lên 1 đơn vị
+    mode++;
+
+    // Nếu mode vượt quá giá trị 3, đặt lại về 1
+    if (mode > 3) {
+      mode = 1;
+    }
+  }
+
+  // Lưu trạng thái hiện tại của nút bấm
+  lastButtonState = buttonState;
+
+  // Hiển thị trạng thái của chương trình trên cổng Serial
+  Serial.println(mode);
+
+  // Thực hiện hành động tương ứng với từng trạng thái của chương trình
+  if (mode == 1) {
+    // Hành động trong trạng thái 1
+  } else if (mode == 2) {
+    // Hành động trong trạng thái 2
+  } else if (mode == 3) {
+    // Hành động trong trạng thái 3
+  }
+
+  // Chờ một chút trước khi lặp lại
+  delay(50);
+}

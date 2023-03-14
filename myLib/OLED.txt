@@ -1,0 +1,38 @@
+#include <Adafruit_SSD1306.h>
+#include <Wire.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
+/**
+ * @brief Khởi tạo kết nối với màn hình OLED
+ * 
+ * @param none
+ * @return none
+ */
+void setup() {
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // địa chỉ của màn hình OLED
+  display.clearDisplay(); // xóa màn hình
+  display.setTextColor(WHITE); // đặt màu chữ trắng
+}
+
+/**
+ * @brief Hiển thị văn bản lên màn hình OLED
+ * 
+ * @param x Tọa độ x của văn bản
+ * @param y Tọa độ y của văn bản
+ * @param text Chuỗi văn bản cần hiển thị
+ * @return none
+ */
+void displayText(int x, int y, String text) {
+  display.setCursor(x, y); // đặt tọa độ hiển thị văn bản
+  display.print(text); // in văn bản lên màn hình
+  display.display(); // hiển thị văn bản lên màn hình
+}
+
+void loop() {
+  displayText(10, 10, "Hello, world!"); // hiển thị chuỗi "Hello, world!" ở tọa độ (10, 10)
+  delay(1000); // đợi 1 giây
+}

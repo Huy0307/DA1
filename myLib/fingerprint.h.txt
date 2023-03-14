@@ -1,0 +1,19 @@
+#ifndef FINGERPRINT_H
+#define FINGERPRINT_H
+
+#include <SoftwareSerial.h>
+#include <Adafruit_Fingerprint.h>
+
+extern uint8_t id;
+extern uint8_t finger_id;
+extern int mode;
+SoftwareSerial mySerial(2, 3);
+Adafruit_Fingerprint finger;
+
+uint8_t readnumber();
+uint8_t getFingerprintEnroll();
+uint8_t getFingerprintID();
+void fingerprintSetup();
+void fingerprintLoop();
+
+#endif
