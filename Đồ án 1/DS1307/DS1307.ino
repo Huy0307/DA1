@@ -22,7 +22,7 @@ void checkArrivalTime(char& result, int& delayInMinutes) {
   Serial.println(now.second(), DEC);
 
   // Kiểm tra xem có phải thời gian đến điểm danh hay không
-  if (now.hour() >= 6 && (now.hour() < 17 || (now.hour() == 17 && now.minute() == 0))) {
+  if (now.hour() >= 6 && (now.hour() < 9 || (now.hour() == 9 && now.minute() == 0))) {
     if (now.hour() >= 8) {
       delayInMinutes = (now.hour() - 8) * 60 + now.minute();  // Tính toán thời gian đến trễ bao nhiêu phút
       if (delayInMinutes == 0) {
