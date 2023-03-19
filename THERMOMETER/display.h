@@ -1,7 +1,7 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>//Thư viện hỗ trợ giao tiếp màn hình OLED 0.96 inch, link GitHub: https://github.com/adafruit/Adafruit-GFX-Library (Adafruit)
+#include <Adafruit_SSD1306.h>//Thư viện hỗ trợ giao tiếp màn hình OLED 0.96 inch, link GitHub: https://github.com/adafruit/Adafruit_SSD1306 (Adafruit)
 #define OLED_RESET 4
 void initOLED();
 void displayData_text(int x, int y, int z, String data);

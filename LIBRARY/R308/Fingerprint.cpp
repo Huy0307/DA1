@@ -1,5 +1,5 @@
 #include "fingerprint.h"
-#include <Arduino.h>
+#include <Arduino.h>//Search ở Tools --> Boards Manager --> Arduino AVR Boards
 const int buttonPin = 2;     // Pin của nút bấm
 int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
 int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
