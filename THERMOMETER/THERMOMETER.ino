@@ -1,9 +1,14 @@
-void setup() {
-  // put your setup code here, to run once:
+#include "MLX_sensor.h"
+#include"display.h"
+#include "fingerprint.h"
+#include "ir_sensor.h"
+void loop(){
+  Serial.begin(9600);
 
 }
-
-void loop() {
-  // put your main code here, to run repeatedly:
-
+void setup(){
+  
 }
+
+
+
