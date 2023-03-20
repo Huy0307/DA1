@@ -55,3 +55,13 @@ void displayData_all_int(int x, int y, int z, String label, int data) {
   display.println(data);
   display.display();
 }
+void displayData_all_uint8_t(int x, int y, int z, String label, uint8_t data) {
+  display.clearDisplay();
+  display.setTextSize(z);
+  display.setTextColor(WHITE);
+  display.setCursor(x,y);
+  display.print(label);
+  display.print(": ");
+  display.println(data);
+  display.display();
+}

@@ -1,11 +1,11 @@
 #include "fingerprint.h"
 #include <Arduino.h>//Search ở Tools --> Boards Manager --> Arduino AVR Boards
-const int buttonPin = 2;     // Pin của nút bấm
-int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
-int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
-uint8_t id;
-uint8_t finger_id;
-int mode = 2;
+// const int buttonPin = 8;     // Pin của nút bấm
+// int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
+// int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
+// uint8_t id;
+// uint8_t finger_id;
+// int mode = 2;
 SoftwareSerial mySerial(2, 3);  // RX, TX
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
@@ -16,7 +16,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 *@retval (kết quả trả về)
 */
 void fingerprintSetup() {
-  pinMode(buttonPin, INPUT_PULLUP);  // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
+  // pinMode(buttonPin, INPUT_PULLUP);  // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
   finger.begin(57600);
   if (finger.verifyPassword()) {
     Serial.println("Sensor ready");
@@ -46,53 +46,13 @@ uint8_t readnumber() {
 }
 /**
 *@brief (Mô tả chức năng)
--	Hàm thiết lập chế độ hoạt động của cảm biến.
-*@param (tham số truyền vào dạng tham chiếu)
--	int mode: Chế độ hoạt động của cảm biến. 
-*@retval (kết quả trả về)
-*/
-void fingerprintLoop() {
-  buttonState = digitalRead(buttonPin);  // Đọc trạng thái hiện tại của nút bấm
-  // Nếu nút bấm được nhấn
-  if (buttonState == LOW && lastButtonState == HIGH) {
-    // Tăng mode lên 1 đơn vị
-    mode++;
-
-    // Nếu mode vượt quá giá trị 3, đặt lại về 1
-    if (mode > 3) {
-      mode = 1;
-    }
-  }
-  // Lưu trạng thái hiện tại của nút bấm
-  lastButtonState = buttonState;
-  if (mode == 1) {
-    id = readnumber();
-    if (id == 0) {
-      return;
-    }
-    getFingerprintEnroll();
-    delay(2000);
-  } else if (mode == 2) {
-    getFingerprintID();
-    delay(2000);
-  } else if (mode == 3) {
-    id = readnumber();
-    if (id == 0) {
-      return;
-    }
-    deleteFingerprint();
-    delay(2000);
-  }
-  delay(50);
-}
-/**
-*@brief (Mô tả chức năng)
 -	Nhập dữ liệu vân tay vào bộ nhớ Flash.
 *@param (tham số truyền vào dạng tham chiếu)
 -	id: Giá trị id của vân tay
 *@retval (kết quả trả về)
 */
-uint8_t getFingerprintEnroll() {
+uint8_t getFingerprintEnroll(uint8_t &id, int &success) {
+  success = 0;
   int p = -1;
   Serial.print("Waiting for valid finger to enroll as #");
   Serial.println(id);
@@ -218,6 +178,7 @@ uint8_t getFingerprintEnroll() {
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
     Serial.println("Stored!");
+    success = 1;
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
     return p;
@@ -231,7 +192,7 @@ uint8_t getFingerprintEnroll() {
     Serial.println("Unknown error");
     return p;
   }
-
+  
   return true;
 }
 /**
@@ -241,7 +202,7 @@ uint8_t getFingerprintEnroll() {
 *@retval (kết quả trả về)
 -	Hàm trả về giá trị số nguyên của ID nếu dấu vân tay trùng.
 */
-uint8_t getFingerprintID() {
+uint8_t getFingerprintID(uint8_t &finger_id) {
   uint8_t p = finger.getImage();
   switch (p) {
     case FINGERPRINT_OK:
@@ -315,7 +276,7 @@ uint8_t getFingerprintID() {
 -	int id: Giá trị id vân tay cần xóa.
 *@retval (kết quả trả về)
 */
-uint8_t deleteFingerprint() {
+uint8_t deleteFingerprint(uint8_t &id) {
   uint8_t p = -1;
   Serial.print("Waiting for valid finger to delete as #");
   Serial.println(id);
