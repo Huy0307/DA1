@@ -4,5 +4,6 @@
 #include <Wire.h>
 void ds1307_setup();
 void checkArrivalTime(char& result, int& delayInMinutes);
-void checkLeaveTime(char& result1, int& earlyInMinutes);
+// void Time(uint8_t &hour,uint8_t &minute,uint8_t &second);
+// void checkLeaveTime(char& result1, int& earlyInMinutes);
 #endif

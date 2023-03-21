@@ -6,9 +6,12 @@ uint8_t id;
 int success;
 uint8_t finger_id;
 int mode = 2;
+int f;
+int detect;
+int a;
 void setup() {
   Serial.begin(9600);
-  fingerprintSetup();
+  fingerprintSetup(f);
   pinMode(buttonPin, INPUT_PULLUP);  // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
 }
 /**
@@ -40,14 +43,14 @@ void loop() {
     getFingerprintEnroll(id,success);
     delay(2000);
   } else if (mode == 2) {
-    getFingerprintID(finger_id);
+    getFingerprintID(finger_id,detect);
     delay(2000);
   } else if (mode == 3) {
     id = readnumber();
     if (id == 0) {
       return;
     }
-    deleteFingerprint(id);
+    deleteFingerprint(id,a);
     delay(2000);
   }
   delay(50);

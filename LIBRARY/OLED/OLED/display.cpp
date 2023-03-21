@@ -14,6 +14,7 @@ void displayData_text(int x, int y, int z, String data) {
   display.setCursor(x,y);
   display.println(data);
   display.display();
+  delay(1000);
 }
 
 void  displayData_number_float(int x, int y, int z, float data){
@@ -23,6 +24,7 @@ void  displayData_number_float(int x, int y, int z, float data){
   display.setCursor(x,y);
   display.println(data);
   display.display();
+  delay(1000);
 }
 
 void displayData_number_int(int x, int y, int z, int data) {
@@ -32,6 +34,7 @@ void displayData_number_int(int x, int y, int z, int data) {
   display.setCursor(x,y);
   display.println(data);
   display.display();
+  delay(1000);
 }
 
 void displayData_all_float(int x, int y, int z, String label, float data) {
@@ -43,6 +46,7 @@ void displayData_all_float(int x, int y, int z, String label, float data) {
   display.print(": ");
   display.println(data);
   display.display();
+  delay(1000);
 }
 
 void displayData_all_int(int x, int y, int z, String label, int data) {
@@ -54,8 +58,9 @@ void displayData_all_int(int x, int y, int z, String label, int data) {
   display.print(": ");
   display.println(data);
   display.display();
+  delay(1000);
 }
-void displayData_all_uint8_t(int x, int y, int z, String label, uint8_t data) {
+void displayData_all_uint8(int x, int y, int z, String label, uint8_t data) {
   display.clearDisplay();
   display.setTextSize(z);
   display.setTextColor(WHITE);
@@ -64,4 +69,5 @@ void displayData_all_uint8_t(int x, int y, int z, String label, uint8_t data) {
   display.print(": ");
   display.println(data);
   display.display();
+  delay(1000);
 }

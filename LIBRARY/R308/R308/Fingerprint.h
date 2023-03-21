@@ -4,7 +4,7 @@
 #include <Adafruit_Fingerprint.h>//Thư viện hỗ trợ giao tiếp cảm biến vân tay: Link GitHub: https://github.com/adafruit/Adafruit-Fingerprint-Sensor-Library (Adafruit)
 uint8_t readnumber();
 uint8_t getFingerprintEnroll(uint8_t &id, int &success);
-uint8_t getFingerprintID(uint8_t &finger_id);
-uint8_t deleteFingerprint(uint8_t &id);
-void fingerprintSetup();
+uint8_t getFingerprintID(uint8_t &finger_id, int &detect);
+uint8_t deleteFingerprint(uint8_t &id, int &a);
+void fingerprintSetup(int &f);
 #endif

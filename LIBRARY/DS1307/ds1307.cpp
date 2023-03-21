@@ -7,6 +7,15 @@ void ds1307_setup() {
   // Cài đặt thời gian gốc
   rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 }
+// void Time(uint8_t &hour,uint8_t &minute,uint8_t &second){
+//   DateTime now = rtc.now();
+//   Serial.print("Current time: ");
+//   Serial.print(now.hour(), DEC);
+//   Serial.print(':');
+//   Serial.print(now.minute(), DEC);
+//   Serial.print(':');
+//   Serial.println(now.second(), DEC);
+// }
 void checkArrivalTime(char& result, int& delayInMinutes) {
   DateTime now = rtc.now();
   Serial.print("Current time: ");
@@ -15,7 +24,6 @@ void checkArrivalTime(char& result, int& delayInMinutes) {
   Serial.print(now.minute(), DEC);
   Serial.print(':');
   Serial.println(now.second(), DEC);
-
   // Kiểm tra xem có phải thời gian đến điểm danh hay không
   if (now.hour() >= 6 && (now.hour() < 9 || (now.hour() == 9 && now.minute() == 0))) {
     if (now.hour() >= 8) {
@@ -33,30 +41,5 @@ void checkArrivalTime(char& result, int& delayInMinutes) {
     } 
   } else {
     result = 'N';  // 'N' là ký tự tượng trưng cho không phải thời gian điểm danh
-  }
-}
-void checkLeaveTime(char& result1, int& earlyInMinutes) {
-  DateTime now = rtc.now();
-  Serial.print("Current time: ");
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.println(now.second(), DEC);
-
-  // Kiểm tra xem có phải thời gian đến điểm danh hay không
-  if (now.hour() >= 16 && (now.hour() < 19 || (now.hour() == 19 && now.minute() == 0))) {
-    if (now.hour() >= 17) {
-      earlyInMinutes = (now.hour() - 17) * 60 + now.minute();  // Tính toán thời gian đến trễ bao nhiêu phút
-      if (earlyInMinutes >= 0) {
-        result1 = 'D';  // 'D là ký tự tượng trưng cho đủ giờ
-      } else {
-        result1 = 'S';                      // 'S' là ký tự tượng trưng cho về sớm
-        earlyInMinutes = -earlyInMinutes;  // Đổi dấu của thời gian về sớm
-      }
-    }
-  }
-  else {
-    result1 = 'N';  // 'N' là ký tự tượng trưng cho không phải thời gian điểm danh
   }
 }

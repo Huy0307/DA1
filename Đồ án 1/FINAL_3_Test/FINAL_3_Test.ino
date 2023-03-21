@@ -10,6 +10,7 @@ Adafruit_SSD1306 display(OLED_RESET);
 uint8_t id;
 uint8_t finger_id;
 int mode = 2;
+int buttonPin = 8;  // Sử dụng chân số 2 để kết nối với nút bấm
 const int led_pin = 8;
 const int sensor_pin = 5;  //sig_pin
 const int buzzer_pin = 6;
@@ -37,7 +38,8 @@ void setup() {
 
   Serial.begin(9600);
   pinMode(en_pin, OUTPUT);
-  digitalWrite(en_pin, HIGH);  // Bật chế độ phát hiện mô-đun hồng ngoại
+  pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
+  digitalWrite(en_pin, HIGH);        // Bật chế độ phát hiện mô-đun hồng ngoại
   pinMode(sensor_pin, INPUT);
   pinMode(led_pin, OUTPUT);
   digitalWrite(led_pin, LOW);
@@ -82,6 +84,12 @@ uint8_t readnumber(void) {
   return num;
 }
 void loop() {
+  // if (digitalRead(buttonPin) == LOW) {  // Kiểm tra xem nút bấm đã được bấm hay chưa
+  //   mode++;                             // Tăng giá trị mode lên 1
+  //   if (mode > 3) {                     // Nếu mode đạt giá trị 3
+  //     mode = 1;                         // Đặt lại giá trị mode là 1
+  //   }
+  // }  
   if (mode == 1) {
     id = readnumber();
     if (id == 0) {  // ID #0 not allowed, try again!
