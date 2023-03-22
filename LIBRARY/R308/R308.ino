@@ -3,12 +3,12 @@ const int buttonPin = 8;     // Pin của nút bấm
 int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
 int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
 uint8_t id;
-int success;
+byte success;
 uint8_t finger_id;
-int mode = 2;
-int f;
-int detect;
-int a;
+byte mode = 2;
+byte f;
+byte detect;
+byte a;
 void setup() {
   Serial.begin(9600);
   fingerprintSetup(f);

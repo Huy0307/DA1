@@ -16,7 +16,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 *@param (tham số truyền vào dạng tham chiếu)
 *@retval (kết quả trả về)
 */
-void fingerprintSetup(int &f) {
+void fingerprintSetup(byte &f) {
   // pinMode(buttonPin, INPUT_PULLUP);  // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
   finger.begin(57600);
   if (finger.verifyPassword()) {
@@ -40,11 +40,10 @@ void fingerprintSetup(int &f) {
 */
 uint8_t readnumber() {
   uint8_t num = 0;
-  while (num == 0) {
-    while (!Serial.available())
-      ;
-    num = Serial.parseInt();
+  if(num==0){
+    delay(5000);
   }
+  num = Serial.parseInt();
   return num;
 }
 /**
@@ -54,7 +53,7 @@ uint8_t readnumber() {
 -	id: Giá trị id của vân tay
 *@retval (kết quả trả về)
 */
-uint8_t getFingerprintEnroll(uint8_t &id, int &success) {
+uint8_t getFingerprintEnroll(uint8_t &id, byte &success) {
   success = 0;
   int p = -1;
   Serial.print("Waiting for valid finger to enroll as #");
@@ -235,7 +234,7 @@ uint8_t getFingerprintEnroll(uint8_t &id, int &success) {
 *@retval (kết quả trả về)
 -	Hàm trả về giá trị số nguyên của ID nếu dấu vân tay trùng.
 */
-uint8_t getFingerprintID(uint8_t &finger_id, int &detect) {
+uint8_t getFingerprintID(uint8_t &finger_id, byte &detect) {
   uint8_t p = finger.getImage();
   switch (p) {
     case FINGERPRINT_OK:
@@ -324,7 +323,7 @@ uint8_t getFingerprintID(uint8_t &finger_id, int &detect) {
 -	int id: Giá trị id vân tay cần xóa.
 *@retval (kết quả trả về)
 */
-uint8_t deleteFingerprint(uint8_t &id, int &a) {
+uint8_t deleteFingerprint(uint8_t &id, byte &a) {
   uint8_t p = -1;
   Serial.print("Waiting for valid finger to delete as #");
   Serial.println(id);

@@ -34,6 +34,14 @@ String readString() {
     }
   }
 }
+void readbutton(){
+  if (digitalRead(buttonPin) == LOW) {  // Kiểm tra xem nút bấm đã được bấm hay chưa
+    mode++;                             // Tăng giá trị mode lên 1
+    if (mode > 3) {                     // Nếu mode đạt giá trị 3
+      mode = 1;                         // Đặt lại giá trị mode là 1
+    }
+  }
+}
 void setup() {
 
   Serial.begin(9600);
@@ -84,12 +92,7 @@ uint8_t readnumber(void) {
   return num;
 }
 void loop() {
-  // if (digitalRead(buttonPin) == LOW) {  // Kiểm tra xem nút bấm đã được bấm hay chưa
-  //   mode++;                             // Tăng giá trị mode lên 1
-  //   if (mode > 3) {                     // Nếu mode đạt giá trị 3
-  //     mode = 1;                         // Đặt lại giá trị mode là 1
-  //   }
-  // }  
+   
   if (mode == 1) {
     id = readnumber();
     if (id == 0) {  // ID #0 not allowed, try again!
