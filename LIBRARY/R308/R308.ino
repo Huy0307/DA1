@@ -3,15 +3,11 @@ const int buttonPin = 8;     // Pin của nút bấm
 int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút chưa được nhấn)
 int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
 uint8_t id;
-byte success;
 uint8_t finger_id;
 byte mode = 2;
-byte f;
-byte detect;
-byte a;
 void setup() {
   Serial.begin(9600);
-  fingerprintSetup(f);
+  fingerprintSetup();
   pinMode(buttonPin, INPUT_PULLUP);  // Cấu hình chân nút bấm là INPUT_PULLUP để tránh nhiễu
 }
 /**
@@ -40,17 +36,17 @@ void loop() {
     if (id == 0) {
       return;
     }
-    getFingerprintEnroll(id,success);
+    getFingerprintEnroll(id);
     delay(2000);
   } else if (mode == 2) {
-    getFingerprintID(finger_id,detect);
+    getFingerprintID(finger_id);
     delay(2000);
   } else if (mode == 3) {
     id = readnumber();
     if (id == 0) {
       return;
     }
-    deleteFingerprint(id,a);
+    deleteFingerprint(id);
     delay(2000);
   }
   delay(50);

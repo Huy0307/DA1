@@ -4,13 +4,16 @@
 #include <Wire.h>
 #include <Adafruit_MLX90614.h>
 #include <SoftwareSerial.h>
+#include <SimpleTimer.h>
+#include <ds1307.h>
+SimpleTimer timer;
 #define laser 12
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 uint8_t id;
 uint8_t finger_id;
+byte buttonPin = 7;  // Sử dụng chân số 13 để kết nối với nút bấm
 int mode = 2;
-int buttonPin = 8;  // Sử dụng chân số 2 để kết nối với nút bấm
 const int led_pin = 8;
 const int sensor_pin = 5;  //sig_pin
 const int buzzer_pin = 6;
@@ -34,17 +37,10 @@ String readString() {
     }
   }
 }
-void readbutton(){
-  if (digitalRead(buttonPin) == LOW) {  // Kiểm tra xem nút bấm đã được bấm hay chưa
-    mode++;                             // Tăng giá trị mode lên 1
-    if (mode > 3) {                     // Nếu mode đạt giá trị 3
-      mode = 1;                         // Đặt lại giá trị mode là 1
-    }
-  }
-}
 void setup() {
-
+  pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
   Serial.begin(9600);
+  ds1307setup();
   pinMode(en_pin, OUTPUT);
   pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
   digitalWrite(en_pin, HIGH);        // Bật chế độ phát hiện mô-đun hồng ngoại
@@ -57,6 +53,9 @@ void setup() {
   digitalWrite(laser, LOW);
   mlx.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  // timer.setInterval(1000L, readbutton);
+  timer.setInterval(15000L, CheckDelete);
+  timer.setInterval(10000L, CheckAdd);  //Set an internal timer every 10sec to check if there a new fingerprint in the website to add it.
   finger.begin(57600);
   if (finger.verifyPassword()) {
     Serial.println("Sensor ready");
@@ -81,6 +80,15 @@ void setup() {
   }
   display.clearDisplay();
 }
+void readbutton() {
+  if (digitalRead(buttonPin) == 0) {
+    delay(200);
+    mode++;
+    if (mode > 3) {
+      mode = 1;
+    }
+  }
+}
 uint8_t readnumber(void) {
   uint8_t num = 0;
 
@@ -92,23 +100,19 @@ uint8_t readnumber(void) {
   return num;
 }
 void loop() {
-   
-  if (mode == 1) {
-    id = readnumber();
-    if (id == 0) {  // ID #0 not allowed, try again!
-      return;
-    }
-    getFingerprintEnroll();
-    delay(2000);
-  } else if (mode == 2) {
+  timer.run();
+  // readbutton();
+  checkTime();
+  int sensor_state = digitalRead(sensor_pin);
+  if (sensor_state == LOW) {
+    digitalWrite(buzzer_pin, HIGH);
+    delay(250);
+    digitalWrite(buzzer_pin, LOW);
+    getTemp();
+  }
+  if (mode == 2) {
     getFingerprintID();
     delay(2000);
-    int sensor_state = digitalRead(sensor_pin);
-    if (authenticated == 1) {
-      if (sensor_state == LOW) {
-        getTemp();
-      }
-    }
   }
 }
 uint8_t getFingerprintEnroll() {
@@ -612,4 +616,50 @@ void getTemp() {
   display.display();
   delay(2000);
   authenticated = 0;
+}
+void CheckAdd() {
+  if (mode == 1) {
+    id = readnumber();
+    if (id == 0) {  // ID #0 not allowed, try again!
+      return;
+    }
+    getFingerprintEnroll();
+    delay(2000);
+  }
+}
+void CheckDelete() {
+  if (mode == 3) {
+    id = readnumber();
+    if (id == 0) {  // ID #0 not allowed, try again!
+      return;
+    }
+    deleteFingerprint();
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 0);
+    display.println("DELETE SUCCESS!!");
+    display.display();
+    delay(1000);
+  }
+}
+uint8_t deleteFingerprint() {
+  uint8_t p = -1;
+  Serial.print("Waiting for valid finger to delete as #");
+  Serial.println(id);
+  p = finger.deleteModel(id);
+  if (p == FINGERPRINT_OK) {
+    Serial.println("Deleted!");
+  } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    Serial.println("Communication error");
+  } else if (p == FINGERPRINT_BADLOCATION) {
+    Serial.println("Could not delete in that location");
+  } else if (p == FINGERPRINT_FLASHERR) {
+    Serial.println("Error writing to flash");
+  } else {
+    Serial.print("Unknown error: 0x");
+    Serial.println(p, HEX);
+  }
+
+  return p;
 }

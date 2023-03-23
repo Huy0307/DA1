@@ -1,5 +1,4 @@
 #include "MLX_sensor.h"
-#include <Arduino.h>
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
 void MLXsetup(){
   mlx.begin();
