@@ -269,10 +269,6 @@ uint8_t getFingerprintID(uint8_t &finger_id) {
 
   // found a match!
   finger_id = finger.fingerID;
-  Serial.print("Found ID #");
-  Serial.print(finger.fingerID);
-  Serial.print(" with confidence of ");
-  Serial.println(finger.confidence);
   return finger.fingerID;
 }
 /**

@@ -85,7 +85,7 @@ void loop() {
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);
-    display.setCursor(0, 10);
+    display.setCursor(0, 5);
     display.print("Temp: ");
     display.print(tempC);
     display.println(" C");
@@ -102,6 +102,18 @@ void loop() {
   }
   if (mode == 2) {
     getFingerprintID(finger_id);
+    if (finger_id != 0) {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0, 10);
+      display.println("Found a print match!");
+      display.println("Match found ID ");
+      display.print(finger_id);
+      display.display();
+      delay_millis(1000);
+    }
+    finger_id=0;
   }
   if (mode == 3) {
     id = readnumber();
