@@ -9,7 +9,7 @@
 
 SoftwareSerial mySerial(2, 3);  // RX, TX
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
-
+unsigned long currentMillis = millis();
 /**
 *@brief (Mô tả chức năng)
 -	Hàm thiết lập hệ thống cho cảm biến (khai báo chân, …).
@@ -24,7 +24,8 @@ void fingerprintSetup() {
   } else {
     Serial.println("Sensor not found");
     while (1) {
-      delay(1);
+      while (millis() - currentMillis < 1)
+        ;
     }
   }
 }
@@ -39,7 +40,8 @@ void fingerprintSetup() {
 uint8_t readnumber() {
   uint8_t num = 0;
   while (num == 0) {
-    delay(5000);
+    while (millis() - currentMillis < 5000)
+        ;
     num = Serial.parseInt();
   }
   return num;

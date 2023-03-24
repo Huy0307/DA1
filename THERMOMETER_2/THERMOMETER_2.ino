@@ -9,19 +9,25 @@
 #include <Adafruit_SSD1306.h>
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
-SimpleTimer timer;
 uint8_t id;
 int enPin = 4;
 int sensorPin = 5;
-byte buttonPin = 7;  // Sử dụng chân số 13 để kết nối với nút bấm
+byte buttonPin = 8;  // Sử dụng chân số 13 để kết nối với nút bấm
 uint8_t pass;
 uint8_t finger_id;
 byte mode = 2;
 float object_temp, ambient_temp;
 int sensorValue;
 byte buzzer = 6;
+unsigned long lastButtonTime = millis();
+void delay_millis(unsigned long ms) {
+  unsigned long current_time = millis();  // Lấy thời điểm hiện tại
+  while (millis() - current_time < ms) {  // Kiểm tra nếu thời gian chạy đã vượt quá khoảng thời gian cần delay
+    // Chờ
+  }
+}
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(230400);
   // Wire.begin();
   fingerprintSetup();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -33,28 +39,26 @@ void setup() {
   digitalWrite(enPin, HIGH);
   pinMode(buzzer, OUTPUT);
   digitalWrite(buzzer, LOW);
-  // timer.setInterval(100L, checkTime);
-  timer.setInterval(10000L, CheckAdd);     //Set an internal timer every 10sec to check if there a new fingerprint in the website to add it.
-  timer.setInterval(15000L, CheckDelete);  //Set an internal timer every 15sec to check wheater there an ID to delete in the website.
-}
-void readbutton() {
-  if (digitalRead(buttonPin) == 0) {
-    delay(200);
-    mode++;
-    if (mode > 3) {
-      mode = 1;
-    }
-  }
 }
 
 void loop() {
-  timer.run();
   checkTime();
+  int buttonValue = digitalRead(buttonPin);
+  // kiểm tra xem nút nhấn đã được nhấn trong vòng 500ms trước đó hay chưa
+  if (buttonValue == LOW && millis() - lastButtonTime > 1500) {
+    // nếu nút nhấn được nhấn, và đã đủ 500ms kể từ lần nhấn trước đó
+    // thì lưu lại thời điểm nhấn nút nhấn để sử dụng cho lần nhấn tiếp theo
+    lastButtonTime = millis();
+    mode = 1;
+    // thực hiện các thao tác khi nút nhấn được nhấn ở đây
+    CheckAdd();
+  }
+  CheckID();
+  delay_millis(1500);
   sensorValue = digitalRead(sensorPin);
   if (sensorValue == LOW) {
-    Serial.print("Detected\n");
     digitalWrite(buzzer, HIGH);
-    delay(250);
+    delay_millis(250);
     digitalWrite(buzzer, LOW);
     readTemperature(object_temp, ambient_temp);
     Serial.print("Object temp: ");
@@ -68,11 +72,11 @@ void loop() {
     display.print(object_temp);
     display.println(" C");
     display.display();
-    delay(1000);
+    delay_millis(1500);
     if (object_temp >= 37.5) {
       digitalWrite(buzzer, HIGH);
       Serial.print("ALERT!!!!\n ");
-      delay(1500);
+      delay_millis(1500);
     }
     // digitalWrite(led_pin, LOW);     //LED tắt
     digitalWrite(buzzer, LOW);  //Buzzer tắt
@@ -83,12 +87,11 @@ void loop() {
     display.setTextColor(WHITE);
     display.println(" Waiting for motion.....");
     display.display();
-    delay(1000);
+    delay_millis(1500);
   }
-  if (mode == 2) {
-    CheckID();
-    delay(2000);
-  }
+  // CheckAdd();
+  // CheckDelete();
+  // delay_millis(300);
 }
 void CheckAdd() {
   if (mode == 1) {
@@ -105,7 +108,7 @@ void CheckAdd() {
     display.println("Enroll ID #");
     display.println(id);
     display.display();
-    delay(1000);
+    delay_millis(1000);
   }
 }
 void CheckDelete() {
@@ -121,21 +124,23 @@ void CheckDelete() {
     display.setCursor(0, 0);
     display.println("DELETE SUCCESS!!");
     display.display();
-    delay(1000);
+    delay_millis(1000);
   }
 }
 void CheckID() {
   if (mode == 2) {
     getFingerprintID(finger_id);
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 0);
-    display.println("Found a print match!");
-    display.println("Match found ID ");
-    display.print(finger_id);
-    display.display();
-    delay(1000);
+    if (finger_id != 0) {
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(WHITE);
+      display.setCursor(0, 0);
+      display.println("Found a print match!");
+      display.println("Match found ID ");
+      display.print(finger_id);
+      display.display();
+      delay_millis(1000);
+    }
   }
 }
 void checkTime() {

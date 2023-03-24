@@ -6,7 +6,7 @@
 #include <SoftwareSerial.h>
 #include <SimpleTimer.h>
 #include <ds1307.h>
-SimpleTimer timer;
+// SimpleTimer timer;
 #define laser 12
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
@@ -39,7 +39,7 @@ String readString() {
 }
 void setup() {
   pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
-  Serial.begin(9600);
+  Serial.begin(115200);
   ds1307setup();
   pinMode(en_pin, OUTPUT);
   pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
@@ -54,8 +54,8 @@ void setup() {
   mlx.begin();
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   // timer.setInterval(1000L, readbutton);
-  timer.setInterval(15000L, CheckDelete);
-  timer.setInterval(10000L, CheckAdd);  //Set an internal timer every 10sec to check if there a new fingerprint in the website to add it.
+  // timer.setInterval(15000L, CheckDelete);
+  // timer.setInterval(10000L, CheckAdd);  //Set an internal timer every 10sec to check if there a new fingerprint in the website to add it.
   finger.begin(57600);
   if (finger.verifyPassword()) {
     Serial.println("Sensor ready");
@@ -65,7 +65,7 @@ void setup() {
     display.setCursor(0, 0);
     display.println("Sensor ready");
     display.display();
-    delay(2000);
+    delay_millis(2000);
   } else {
     Serial.println("Sensor not found");
     display.clearDisplay();
@@ -75,19 +75,10 @@ void setup() {
     display.println("Sensor not found");
     display.display();
     while (1) {
-      delay(1);
+      delay_millis(1);
     }
   }
   display.clearDisplay();
-}
-void readbutton() {
-  if (digitalRead(buttonPin) == 0) {
-    delay(200);
-    mode++;
-    if (mode > 3) {
-      mode = 1;
-    }
-  }
 }
 uint8_t readnumber(void) {
   uint8_t num = 0;
@@ -99,20 +90,36 @@ uint8_t readnumber(void) {
   }
   return num;
 }
+unsigned long lastButtonTime = millis();
+void delay_millis(unsigned long ms) {
+  unsigned long current_time = millis();  // Lấy thời điểm hiện tại
+  while (millis() - current_time < ms) {  // Kiểm tra nếu thời gian chạy đã vượt quá khoảng thời gian cần delay
+    // Chờ
+  }
+}
 void loop() {
-  timer.run();
-  // readbutton();
+  // timer.run();
+  int buttonValue = digitalRead(buttonPin);
+  // kiểm tra xem nút nhấn đã được nhấn trong vòng 500ms trước đó hay chưa
+  if (buttonValue == LOW && millis() - lastButtonTime > 1500) {
+    // nếu nút nhấn được nhấn, và đã đủ 500ms kể từ lần nhấn trước đó
+    // thì lưu lại thời điểm nhấn nút nhấn để sử dụng cho lần nhấn tiếp theo
+    lastButtonTime = millis();
+    mode = 1;
+    // thực hiện các thao tác khi nút nhấn được nhấn ở đây
+    CheckAdd();
+  }
   checkTime();
   int sensor_state = digitalRead(sensor_pin);
   if (sensor_state == LOW) {
     digitalWrite(buzzer_pin, HIGH);
-    delay(250);
+    delay_millis(250);
     digitalWrite(buzzer_pin, LOW);
     getTemp();
   }
   if (mode == 2) {
     getFingerprintID();
-    delay(2000);
+    delay_millis(2000);
   }
 }
 uint8_t getFingerprintEnroll() {
@@ -126,7 +133,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextColor(WHITE);
   display.print("Waiting for valid finger to enroll as #");
   display.println(id);
-  delay(1000);
+  delay_millis(1000);
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
@@ -137,7 +144,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Image taken");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_NOFINGER:
         Serial.println(".");
@@ -146,7 +153,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print(".");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_PACKETRECIEVEERR:
         Serial.println("Communication error");
@@ -155,7 +162,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Communication error");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_IMAGEFAIL:
         Serial.println("Imaging error");
@@ -164,7 +171,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Imaging error");
-        delay(1000);
+        delay_millis(1000);
         break;
       default:
         Serial.println("Unknown error");
@@ -173,7 +180,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Unknown error");
-        delay(1000);
+        delay_millis(1000);
         break;
     }
   }
@@ -189,7 +196,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Image converted");
-      delay(1000);
+      delay_millis(1000);
       break;
     case FINGERPRINT_IMAGEMESS:
       Serial.println("Image too messy");
@@ -198,7 +205,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Image too messy");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
@@ -207,7 +214,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Communication error");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_FEATUREFAIL:
       Serial.println("Could not find fingerprint features");
@@ -216,7 +223,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Could not find fingerprint features");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_INVALIDIMAGE:
       Serial.println("Could not find fingerprint features");
@@ -225,7 +232,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Could not find fingerprint features");
-      delay(1000);
+      delay_millis(1000);
       return p;
     default:
       Serial.println("Unknown error");
@@ -234,7 +241,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Unknown error");
-      delay(1000);
+      delay_millis(1000);
       return p;
   }
 
@@ -244,7 +251,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("Remove finger");
-  delay(2000);
+  delay_millis(2000);
   p = 0;
   while (p != FINGERPRINT_NOFINGER) {
     p = finger.getImage();
@@ -257,7 +264,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextColor(WHITE);
   display.print("ID: ");
   display.println(id);
-  delay(1000);
+  delay_millis(1000);
   p = -1;
   Serial.println("Place same finger again");
   display.clearDisplay();
@@ -265,7 +272,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.print("Place same finger again");
-  delay(1000);
+  delay_millis(1000);
   while (p != FINGERPRINT_OK) {
     p = finger.getImage();
     switch (p) {
@@ -276,7 +283,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Image taken");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_NOFINGER:
         Serial.print(".");
@@ -285,7 +292,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print(".");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_PACKETRECIEVEERR:
         Serial.println("Communication error");
@@ -294,7 +301,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Communication error");
-        delay(1000);
+        delay_millis(1000);
         break;
       case FINGERPRINT_IMAGEFAIL:
         Serial.println("Imaging error");
@@ -303,7 +310,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Imaging error");
-        delay(1000);
+        delay_millis(1000);
         break;
       default:
         Serial.println("Unknown error");
@@ -312,7 +319,7 @@ uint8_t getFingerprintEnroll() {
         display.setTextSize(1);
         display.setTextColor(WHITE);
         display.print("Unknown error");
-        delay(1000);
+        delay_millis(1000);
         break;
     }
   }
@@ -328,7 +335,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Image converted");
-      delay(1000);
+      delay_millis(1000);
       break;
     case FINGERPRINT_IMAGEMESS:
       Serial.println("Image too messy");
@@ -337,7 +344,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Image too messy");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
       Serial.println("Communication error");
@@ -346,7 +353,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Communication error");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_FEATUREFAIL:
       Serial.println("Could not find fingerprint features");
@@ -355,7 +362,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Could not find fingerprint features");
-      delay(1000);
+      delay_millis(1000);
       return p;
     case FINGERPRINT_INVALIDIMAGE:
       Serial.println("Could not find fingerprint features");
@@ -364,7 +371,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Could not find fingerprint features");
-      delay(1000);
+      delay_millis(1000);
       return p;
     default:
       Serial.println("Unknown error");
@@ -373,7 +380,7 @@ uint8_t getFingerprintEnroll() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.print("Unknown error");
-      delay(1000);
+      delay_millis(1000);
       return p;
   }
 
@@ -386,7 +393,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextColor(WHITE);
   display.print("Creating model for #");
   display.print(id);
-  delay(1000);
+  delay_millis(1000);
 
   p = finger.createModel();
   if (p == FINGERPRINT_OK) {
@@ -396,7 +403,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Prints matched!");
-    delay(1000);
+    delay_millis(1000);
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
     display.clearDisplay();
@@ -404,7 +411,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Communication error");
-    delay(1000);
+    delay_millis(1000);
     return p;
   } else if (p == FINGERPRINT_ENROLLMISMATCH) {
     Serial.println("Fingerprints did not match");
@@ -413,7 +420,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Fingerprints did not match");
-    delay(1000);
+    delay_millis(1000);
     return p;
   } else {
     Serial.println("Unknown error");
@@ -422,7 +429,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Unknown error");
-    delay(1000);
+    delay_millis(1000);
     return p;
   }
 
@@ -434,7 +441,7 @@ uint8_t getFingerprintEnroll() {
   display.setTextColor(WHITE);
   display.print("ID ");
   display.print(id);
-  delay(1000);
+  delay_millis(1000);
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
     Serial.println("Stored!");
@@ -443,7 +450,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Stored!");
-    delay(1000);
+    delay_millis(1000);
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
     Serial.println("Communication error");
     display.clearDisplay();
@@ -451,7 +458,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Communication error");
-    delay(1000);
+    delay_millis(1000);
     return p;
   } else if (p == FINGERPRINT_BADLOCATION) {
     Serial.println("Could not store in that location");
@@ -460,7 +467,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Could not store in that location");
-    delay(1000);
+    delay_millis(1000);
     return p;
   } else if (p == FINGERPRINT_FLASHERR) {
     Serial.println("Error writing to flash");
@@ -469,7 +476,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Error writing to flash");
-    delay(1000);
+    delay_millis(1000);
     return p;
   } else {
     Serial.println("Unknown error");
@@ -478,7 +485,7 @@ uint8_t getFingerprintEnroll() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.print("Unknown error");
-    delay(1000);
+    delay_millis(1000);
     return p;
   }
 
@@ -562,7 +569,7 @@ uint8_t getFingerprintID() {
   display.print(" with confidence of ");
   display.print(finger.confidence);
   display.display();
-  delay(2000);
+  delay_millis(2000);
   return finger.fingerID;
 }
 int getFingerprintIDez() {
@@ -599,11 +606,11 @@ void getTemp() {
   display.print(temp_obj);
   display.println(" C");
   display.display();
-  delay(2000);
+  delay_millis(2000);
   if (temp_obj >= 37.5) {
     digitalWrite(buzzer_pin, HIGH);
     Serial.print("ALERT!!!!\n ");
-    delay(1500);
+    delay_millis(1500);
   }
   digitalWrite(led_pin, LOW);     //LED tắt
   digitalWrite(buzzer_pin, LOW);  //Buzzer tắt
@@ -614,18 +621,16 @@ void getTemp() {
   display.setTextColor(WHITE);
   display.println(" Waiting for motion.....");
   display.display();
-  delay(2000);
+  delay_millis(2000);
   authenticated = 0;
 }
 void CheckAdd() {
-  if (mode == 1) {
-    id = readnumber();
-    if (id == 0) {  // ID #0 not allowed, try again!
-      return;
-    }
-    getFingerprintEnroll();
-    delay(2000);
+  id = readnumber();
+  if (id == 0) {  // ID #0 not allowed, try again!
+    return;
   }
+  getFingerprintEnroll();
+  delay_millis(2000);
 }
 void CheckDelete() {
   if (mode == 3) {
@@ -640,7 +645,7 @@ void CheckDelete() {
     display.setCursor(0, 0);
     display.println("DELETE SUCCESS!!");
     display.display();
-    delay(1000);
+    delay_millis(1000);
   }
 }
 uint8_t deleteFingerprint() {
