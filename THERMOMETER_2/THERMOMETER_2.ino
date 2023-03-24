@@ -42,7 +42,7 @@ void setup() {
 }
 
 void loop() {
-  checkTime();
+  // checkTime();
   int buttonValue = digitalRead(buttonPin);
   // kiểm tra xem nút nhấn đã được nhấn trong vòng 500ms trước đó hay chưa
   if (buttonValue == LOW && millis() - lastButtonTime > 1500) {
@@ -54,7 +54,6 @@ void loop() {
     CheckAdd();
   }
   CheckID();
-  delay_millis(1500);
   sensorValue = digitalRead(sensorPin);
   if (sensorValue == LOW) {
     digitalWrite(buzzer, HIGH);
@@ -81,13 +80,6 @@ void loop() {
     // digitalWrite(led_pin, LOW);     //LED tắt
     digitalWrite(buzzer, LOW);  //Buzzer tắt
     // digitalWrite(laser, LOW);       //laser tắt
-    display.clearDisplay();
-    display.setCursor(25, 10);
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.println(" Waiting for motion.....");
-    display.display();
-    delay_millis(1500);
   }
   // CheckAdd();
   // CheckDelete();
