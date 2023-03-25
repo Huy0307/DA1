@@ -7,7 +7,7 @@
 // uint8_t finger_id;
 // int mode = 2;
 
-SoftwareSerial mySerial(2, 3);  // RX, TX
+SoftwareSerial mySerial(6, 7);  // RX, TX
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 unsigned long currentMillis = millis();
 /**
@@ -180,8 +180,8 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
     return p;
   }
 
-  Serial.print("ID ");
-  Serial.println(id);
+  // Serial.print("ID ");
+  // Serial.println(id);
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
     Serial.println("Stored!");

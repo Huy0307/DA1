@@ -4,7 +4,7 @@ int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút 
 int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
 uint8_t id;
 uint8_t finger_id;
-byte mode = 2;
+byte mode = 1;
 void setup() {
   Serial.begin(9600);
   fingerprintSetup();
