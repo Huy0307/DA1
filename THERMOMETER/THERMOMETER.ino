@@ -4,6 +4,7 @@
 #include <TaskScheduler.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
+#include <SD.h>
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 const int buttonPin = 8;     // Pin của nút bấm
@@ -59,9 +60,7 @@ Task task2(task2Interval, TASK_FOREVER, []() {
     }
     // displayData_all_uint8_t(5, 0, 1, "ID Enroll : ", id);
     delay(1000);
-    getFingerprintEnroll(id, success);
-    if (success == 1) {
-    }
+    getFingerprintEnroll(id);
     delay(1000);
   } else if (mode == 2) {
     getFingerprintID(finger_id);

@@ -1,20 +1,20 @@
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_MLX90614.h>
+#include <Wire.h>
+#include <Time.h>
 #include <DS1307RTC.h>
 #include <Fingerprint.h>
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
-const byte buttonPin1 = 2;  // Sử dụng chân số 13 để kết nối với nút bấm
-const byte buttonPin2 = 3;  // Sử dụng chân số 13 để kết nối với nút bấm
-const byte enPin = 4;
-const byte sensorPin = 5;
-const byte buzzer = 8;
+byte buttonPin = 2;  // Sử dụng chân số 13 để kết nối với nút bấm
+byte enPin = 4;
+byte sensorPin = 5;
+byte buzzer = 8;
 byte mode = 2;
 uint8_t id;
 uint8_t finger_id;
-volatile bool buttonPressed1 = false;
-volatile bool buttonPressed2 = false;
+volatile bool buttonPressed = false;
 void delay_millis(unsigned long ms) {
   unsigned long current_time = millis();  // Lấy thời điểm hiện tại
   while (millis() - current_time < ms) {  // Kiểm tra nếu thời gian chạy đã vượt quá khoảng thời gian cần delay
@@ -23,41 +23,37 @@ void delay_millis(unsigned long ms) {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(230400);
   fingerprintSetup();
   pinMode(sensorPin, INPUT);
   pinMode(buzzer, OUTPUT);
-  pinMode(buttonPin1, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
-  pinMode(buttonPin2, INPUT_PULLUP);  // Đặt chân số 3 là INPUT_PULLUP để kết nối nút bấm
-  attachInterrupt(digitalPinToInterrupt(buttonPin1), buttonInterrupt1, FALLING);
-  attachInterrupt(digitalPinToInterrupt(buttonPin2), buttonInterrupt2, FALLING);
+  pinMode(buttonPin, INPUT_PULLUP);  // Đặt chân số 2 là INPUT_PULLUP để kết nối nút bấm
+  attachInterrupt(digitalPinToInterrupt(buttonPin), buttonInterrupt, RISING);
   digitalWrite(buzzer, LOW);
   pinMode(enPin, OUTPUT);
   // Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
   digitalWrite(enPin, HIGH);
   // Initialize display
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  delay_millis(2000);
+
+  // Initialize I2C
+  Wire.begin();
+
   mlx.begin();
 }
-void buttonInterrupt1() {
-  buttonPressed1 = true;
-}
-void buttonInterrupt2() {
-  buttonPressed2 = true;
+void buttonInterrupt() {
+  buttonPressed = true;
 }
 void loop() {
-  byte buttonState1 = digitalRead(buttonPin1);
-  if (buttonPressed1 == true && buttonState1 == LOW) {
-    buttonPressed1 = false;
-    mode = 3;
-    Serial.print(mode);
-    delay_millis(1000);
-  }
-  byte buttonState2 = digitalRead(buttonPin2);
-  if (buttonPressed2 == true && buttonState2 == LOW) {
-    buttonPressed2 = false;
-    mode = 1;
-    Serial.print(mode);
+  byte buttonState = digitalRead(buttonPin);
+  if (buttonPressed == false && buttonState == LOW) {
+    buttonPressed = true;
+    mode++;
+    if (mode > 3) {
+      mode = 1;
+    }
+    Serial.println(mode);
     delay_millis(1000);
   }
   // Check if object detected by YS-29 sensor
@@ -68,11 +64,11 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 0);
-    display.print(F("Time: "));
+    display.print("Time: ");
     display.print(tm.Hour);
-    display.print(F(":"));
+    display.print(":");
     display.print(tm.Minute);
-    display.print(F(":"));
+    display.print(":");
     display.println(tm.Second);
     display.display();
     delay_millis(1000);
@@ -87,8 +83,9 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 10);
-    display.print(F("Temp: "));
-    display.println(tempC);
+    display.print("Temp: ");
+    display.print(tempC);
+    display.println(" C");
     // Update OLED display
     display.display();
     delay_millis(1000);
@@ -103,10 +100,9 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 10);
-    display.println(F("ENROLLED!!"));
+    display.println("ENROLLED!!");
     display.display();
     delay_millis(1000);
-    mode = 2;
   }
   if (mode == 2) {
     getFingerprintID(finger_id);
@@ -115,8 +111,8 @@ void loop() {
       display.setTextSize(1);
       display.setTextColor(WHITE);
       display.setCursor(0, 10);
-      display.println(F("Found a print match!"));
-      display.println(F("Match found ID "));
+      display.println("Found a print match!");
+      display.println("Match found ID ");
       display.print(finger_id);
       display.display();
       delay_millis(1000);
@@ -133,9 +129,8 @@ void loop() {
     display.setTextSize(1);
     display.setTextColor(WHITE);
     display.setCursor(0, 10);
-    display.println(F("DELETED!"));
+    display.println("DELETED!");
     display.display();
     delay_millis(1000);
-    mode = 2;
   }
 }
