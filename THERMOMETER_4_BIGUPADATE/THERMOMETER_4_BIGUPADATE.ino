@@ -30,7 +30,6 @@ void delay_millis(unsigned long ms) {
     // Chờ
   }
 }
-
 void setup() {
   Serial.begin(9600);
   // Bắt đầu SPI
@@ -83,20 +82,6 @@ void loop() {
     delay_millis(1000);
   }
   // Check if object detected by YS-29 sensor
-  // oled current time
-  tmElements_t tm;
-  if (RTC.read(tm)) {
-    oled.clear();
-    oled.set2X();
-    oled.setCursor(0, 10);
-    oled.print(F("Time: \n"));
-    oled.print(tm.Hour);
-    oled.print(F(":"));
-    oled.print(tm.Minute);
-    oled.print(F(":"));
-    oled.println(tm.Second);
-    delay_millis(1000);
-  }
   byte sensorValue = digitalRead(sensorPin);
   if (sensorValue == LOW) {
     tempC = mlx.readObjectTempC();
@@ -143,7 +128,6 @@ void loop() {
       oled.print(finger_id);
       delay_millis(1000);
     }
-    finger_id = 0;
   }
   if (mode == 3) {
     id = readnumber();
@@ -158,21 +142,76 @@ void loop() {
     delay_millis(1000);
     mode = 2;
   }
+  // oled current time
+  tmElements_t tm;
+  if (RTC.read(tm)) {
+    oled.clear();
+    oled.set2X();
+    oled.setCursor(0, 10);
+    oled.print(F("Time: \n"));
+    oled.print(tm.Hour);
+    oled.print(F(":"));
+    oled.print(tm.Minute);
+    oled.print(F(":"));
+    oled.println(tm.Second);
+    delay_millis(1000);
+    if (finger_id != 0) {
+      if (tm.Hour >= 21 && tm.Hour < 22) {
+        // tính thời gian điểm danh so với 8 giờ sáng
+        int minutes_late = (tm.Hour - 21) * 60 + tm.Minute;
+        if (minutes_late <= 0) {
+          Serial.print(F("E"));
+          oled.clear();
+          oled.set2X();
+          oled.setCursor(10, 10);
+          oled.print("Arrived early");  // đến đúng giờ
+          delay_millis(2000);
+        } else if (minutes_late <= 15) {
+          Serial.print(F("O"));
+          oled.clear();
+          oled.set2X();
+          oled.setCursor(10, 10);
+          oled.print("On Time");  // đến sớm
+          delay_millis(2000);
+        } else {
+          Serial.print(F("L\n"));
+          oled.clear();
+          oled.set2X();
+          oled.setCursor(10, 10);
+          oled.print("Late");  // đến trễ
+          delay_millis(2000);
+        }
+      } else if (tm.Hour < 21 || tm.Hour > 22) {
+        Serial.print(F("Time out"));
+        oled.clear();
+        oled.set2X();
+        oled.setCursor(10, 10);
+        oled.print("Time out");  // thời gian điểm danh đã kết thúc
+        delay_millis(2000);
+      }
+    }      
+  }
   File dataFile = SD.open("data.csv", FILE_WRITE);  // Mở file data.txt và chế độ ghi
   if (dataFile) {                                   // Nếu file đã được mở
     Serial.println(F("Opening file"));
-    dataFile.print(id);                             // Lưu id vào file
-    dataFile.print(",");                            // Phân cách giữa id và tempC
-    dataFile.print(tempC);                          // Lưu tempC vào file
-    dataFile.print(",");                            // Phân cách
+    if(finger_id != 0){
+    dataFile.print(finger_id);     // Lưu id vào file
+    }
+    dataFile.print(",");    // Phân cách giữa id và tempC
+    if(tempC != 0){
+    dataFile.print(tempC);  // Lưu tempC vào file
+    }
+    dataFile.print(",");    // Phân cách
     dataFile.print(tm.Hour);
     dataFile.print(":");
     dataFile.print(tm.Minute);
     dataFile.print(":");
     dataFile.print(tm.Second);
-    dataFile.println();                             // Xuống dòng để lưu thông tin tiếp theo
-    dataFile.close();                               // Đóng file
+    dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
+    dataFile.close();    // Đóng file
   } else {
     Serial.println(F("Error opening file"));  // In ra thông báo lỗi nếu không mở được file
   }
+  tempC = 0;
+  finger_id = 0;
 }
