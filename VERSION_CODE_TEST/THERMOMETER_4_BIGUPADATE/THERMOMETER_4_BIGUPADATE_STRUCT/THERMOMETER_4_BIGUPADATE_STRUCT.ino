@@ -19,9 +19,13 @@ const byte enPin = 4;
 const byte sensorPin = 5;
 const byte buzzer = 8;
 byte mode = 2;
-float tempC;
-uint8_t id;
-uint8_t finger_id;
+struct Data {
+  float tempC;
+  uint8_t id;
+  uint8_t finger_id;
+  tmElements_t tm;
+};
+Data data;
 volatile bool buttonPressed1 = false;
 volatile bool buttonPressed2 = false;
 void delay_millis(unsigned long ms) {
@@ -60,13 +64,24 @@ void setup() {
 #endif  // RST_PIN >= 0
   mlx.begin();
 }
+void loop() {
+  readstate();
+  // Check if object detected by YS-29 sensor
+  readTemp();
+  readFinger();
+  // oled current time
+  Time();
+  SDcard();
+  data.tempC = 0;
+  data.finger_id = 0;
+}
 void buttonInterrupt1() {
   buttonPressed1 = true;
 }
 void buttonInterrupt2() {
   buttonPressed2 = true;
 }
-void loop() {
+void readstate() {
   byte buttonState1 = digitalRead(buttonPin1);
   if (buttonPressed1 == true && buttonState1 == LOW) {
     buttonPressed1 = false;
@@ -81,10 +96,11 @@ void loop() {
     Serial.print(mode);
     delay_millis(1000);
   }
-  // Check if object detected by YS-29 sensor
+}
+void readTemp() {
   byte sensorValue = digitalRead(sensorPin);
   if (sensorValue == LOW) {
-    tempC = mlx.readObjectTempC();
+    data.tempC = mlx.readObjectTempC();
     digitalWrite(buzzer, HIGH);
     delay_millis(250);
     digitalWrite(buzzer, LOW);
@@ -94,16 +110,18 @@ void loop() {
     oled.setCursor(40, 40);
     oled.print(F("Temp: \n"));
     oled.setCursor(30, 40);
-    oled.println(tempC);
+    oled.println(data.tempC);
     // Update OLED oled
     delay_millis(1000);
   }
+}
+void readFinger() {
   if (mode == 1) {
-    id = readnumber();
-    if (id == 0) {  // ID #0 not allowed, try again!
+    data.id = readnumber();
+    if (data.id == 0) {  // ID #0 not allowed, try again!
       return;
     }
-    getFingerprintEnroll(id);
+    getFingerprintEnroll(data.id);
     oled.clear();
     oled.set2X();
     oled.setCursor(0, 10);
@@ -112,8 +130,8 @@ void loop() {
     mode = 2;
   }
   if (mode == 2) {
-    getFingerprintID(finger_id);
-    if (finger_id != 0) {
+    getFingerprintID(data.finger_id);
+    if (data.finger_id != 0) {
       oled.clear();
       oled.set1X();
       oled.println(F("\n"));
@@ -125,16 +143,16 @@ void loop() {
       oled.println(F("Match found ID\n"));
       oled.set1X();
       oled.setCursor(10, 20);
-      oled.print(finger_id);
+      oled.print(data.finger_id);
       delay_millis(1000);
     }
   }
   if (mode == 3) {
-    id = readnumber();
-    if (id == 0) {  // ID #0 not allowed, try again!
+    data.id = readnumber();
+    if (data.id == 0) {  // ID #0 not allowed, try again!
       return;
     }
-    deleteFingerprint(id);
+    deleteFingerprint(data.id);
     oled.clear();
     oled.set2X();
     oled.setCursor(0, 10);
@@ -142,76 +160,78 @@ void loop() {
     delay_millis(1000);
     mode = 2;
   }
-  // oled current time
-  tmElements_t tm;
-  if (RTC.read(tm)) {
+}
+void Time() {
+  if (RTC.read(data.tm)) {
     oled.clear();
     oled.set2X();
     oled.setCursor(0, 10);
     oled.print(F("Time: \n"));
-    oled.print(tm.Hour);
+    oled.print(data.tm.Hour);
     oled.print(F(":"));
-    oled.print(tm.Minute);
+    oled.print(data.tm.Minute);
     oled.print(F(":"));
-    oled.println(tm.Second);
+    oled.println(data.tm.Second);
     delay_millis(1000);
-    if (finger_id != 0) {
-      if (tm.Hour >= 21 && tm.Hour < 22) {
+    if (data.finger_id != 0) {
+      if (data.tm.Hour >= 21 && data.tm.Hour < 22) {
         // tính thời gian điểm danh so với 8 giờ sáng
-        int minutes_late = (tm.Hour - 21) * 60 + tm.Minute;
+        int minutes_late = (data.tm.Hour - 21) * 60 + data.tm.Minute;
         if (minutes_late <= 0) {
           Serial.print(F("E"));
           oled.clear();
           oled.set2X();
           oled.setCursor(10, 10);
-          oled.print("Arrived early");  // đến đúng giờ
+          oled.print(F("Arrived early"));  // đến đúng giờ
           delay_millis(2000);
         } else if (minutes_late <= 15) {
           Serial.print(F("O"));
           oled.clear();
           oled.set2X();
           oled.setCursor(10, 10);
-          oled.print("On Time");  // đến sớm
+          oled.print(F("On Time"));  // đến sớm
           delay_millis(2000);
         } else {
           Serial.print(F("L\n"));
           oled.clear();
           oled.set2X();
           oled.setCursor(10, 10);
-          oled.print("Late");  // đến trễ
+          oled.print(F("Late"));  // đến trễ
           delay_millis(2000);
         }
-      } else if (tm.Hour < 21 || tm.Hour > 22) {
+      } else if (data.tm.Hour < 21 || data.tm.Hour > 22) {
         Serial.print(F("Time out"));
         oled.clear();
         oled.set2X();
         oled.setCursor(10, 10);
-        oled.print("Time out");  // thời gian điểm danh đã kết thúc
+        oled.print(F("Time out"));  // thời gian điểm danh đã kết thúc
         delay_millis(2000);
       }
-    }      
+    }
   }
+}
+void SDcard() {
   File dataFile = SD.open("data.csv", FILE_WRITE);  // Mở file data.txt và chế độ ghi
   if (dataFile) {                                   // Nếu file đã được mở
-    Serial.println(F("Opening file"));
-    if(finger_id != 0){
-    dataFile.print(finger_id);     // Lưu id vào file
+    if (data.finger_id != 0 || data.tempC != 0) {
+      Serial.println(F("Opening file"));
+      if (data.finger_id != 0) {
+        dataFile.print(data.finger_id);  // Lưu id vào file
+      }
+      dataFile.print(",");  // Phân cách giữa id và tempC
+      if (data.tempC != 0) {
+        dataFile.print(data.tempC);  // Lưu tempC vào file
+      }
+      dataFile.print(",");  // Phân cách
+      dataFile.print(data.tm.Hour);
+      dataFile.print(":");
+      dataFile.print(data.tm.Minute);
+      dataFile.print(":");
+      dataFile.print(data.tm.Second);
+      dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
     }
-    dataFile.print(",");    // Phân cách giữa id và tempC
-    if(tempC != 0){
-    dataFile.print(tempC);  // Lưu tempC vào file
-    }
-    dataFile.print(",");    // Phân cách
-    dataFile.print(tm.Hour);
-    dataFile.print(":");
-    dataFile.print(tm.Minute);
-    dataFile.print(":");
-    dataFile.print(tm.Second);
-    dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
-    dataFile.close();    // Đóng file
+    dataFile.close();  // Đóng file
   } else {
     Serial.println(F("Error opening file"));  // In ra thông báo lỗi nếu không mở được file
   }
-  tempC = 0;
-  finger_id = 0;
 }
