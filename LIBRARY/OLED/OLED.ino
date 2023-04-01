@@ -1,15 +1,17 @@
-#include"display.h"
-float mode = 2;
+#include <Arduino.h>
+#include "oled_display.h"
+
+oled_display oled;
+
 void setup() {
-  Serial.begin(9600);
-  initOLED();
+  oled.begin();
 }
 
 void loop() {
-  displayData_text(10,15,1,"String data");
-  delay(2000);
-  displayData_text(0,0,1,"String data");
-  delay(2000);
-  displayData_all_float(0,0,1,"MODE:",mode);
-  delay(2000);
+  oled.print_text_1x("\n",0,0);
+  delay(1000);
+  oled.print_text_2x("Hello",10,10);
+  delay(1000);
+  oled.print_int_2x(13, 15,10);
+  delay(1000);
 }
