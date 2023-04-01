@@ -55,9 +55,9 @@ void setup() {
 }
 void loop() {
   readstate();
+  readFinger();
   // Check if object detected by YS-29 sensor
   readTemp();
-  readFinger();
   // oled current time
   Time();
   SDcard();
@@ -138,14 +138,6 @@ void readFinger() {
 }
 void Time() {
   if (RTC.read(data.tm)) {
-    oled.clear();
-    oled.print_text_2x("Time: \n", 0, 10);
-    oled.print_int2x(data.tm.Hour);
-    oled.print_text2x(":");
-    oled.print_int2x(data.tm.Minute);
-    oled.print_text2x(":");
-    oled.print_int2x(data.tm.Second);
-    delay_millis(1000);
     if (data.finger_id != 0) {
       if (data.tm.Hour >= 21 && data.tm.Hour < 22) {
         // tính thời gian điểm danh so với 21h15p
@@ -175,6 +167,14 @@ void Time() {
         delay_millis(2000);
       }
     }
+    oled.clear();
+    oled.print_text_2x("Time: \n", 0, 10);
+    oled.print_int2x(data.tm.Hour);
+    oled.print_text2x(":");
+    oled.print_int2x(data.tm.Minute);
+    oled.print_text2x(":");
+    oled.print_int2x(data.tm.Second);
+    delay_millis(1000);
   }
 }
 void SDcard() {
