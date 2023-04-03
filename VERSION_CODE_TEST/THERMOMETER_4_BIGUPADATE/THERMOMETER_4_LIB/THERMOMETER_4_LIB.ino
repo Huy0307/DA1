@@ -1,8 +1,8 @@
-#include <oled_display.h>
 #include <Wire.h>
 #include <Adafruit_MLX90614.h>
 #include <DS1307RTC.h>
-#include <Fingerprint.h>
+#include "Fingerprint.h"
+#include "oled_display.h"
 #include <SD.h>
 #include <SPI.h>
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
@@ -19,6 +19,7 @@ struct Data {
   uint8_t finger_id;
   tmElements_t tm;
   byte mode = 2;
+  int late_minutes;
 };
 Data data;
 volatile bool buttonPressed1 = false;
@@ -31,10 +32,8 @@ void delay_millis(unsigned long ms) {
 }
 void setup() {
   Serial.begin(9600);
-  // Bắt đầu SPI
-  SPI.begin();
-  // Chọn thẻ nhớ SD bằng chân kết nối
-  pinMode(chipSelect, OUTPUT);
+  SPI.begin();// Bắt đầu SPI
+  pinMode(chipSelect, OUTPUT);// Chọn thẻ nhớ SD bằng chân kết nối
   oled.begin();
   fingerprintSetup();
   pinMode(sensorPin, INPUT);
@@ -45,21 +44,17 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(buttonPin2), buttonInterrupt2, FALLING);
   digitalWrite(buzzer, LOW);
   pinMode(enPin, OUTPUT);
-  // Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
-  digitalWrite(enPin, HIGH);
+  digitalWrite(enPin, HIGH);// Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
   if (!SD.begin(chipSelect)) {
     Serial.println(F("Không tìm thấy thẻ nhớ SD."));
-    return;
-  }
+    return;}
   mlx.begin();
 }
 void loop() {
   readstate();
   readFinger();
-  // Check if object detected by YS-29 sensor
-  readTemp();
-  // oled current time
-  Time();
+  readTemp();// Check if object detected by YS-29 sensor
+  Time();// oled current time
   SDcard();
   data.tempC = 0;
   data.finger_id = 0;
@@ -139,15 +134,16 @@ void readFinger() {
 void Time() {
   if (RTC.read(data.tm)) {
     if (data.finger_id != 0) {
-      if (data.tm.Hour >= 21 && data.tm.Hour < 22) {
+      if (data.tm.Hour >= 7 && data.tm.Hour < 9) {
         // tính thời gian điểm danh so với 21h15p
-        int late_minutes = (data.tm.Hour - 21) * 60 + data.tm.Minute - 15;
-        if (late_minutes <= 0) {
+        data.late_minutes = (data.tm.Hour - 8) * 60 + data.tm.Minute;
+        if (data.late_minutes <= 0) {
           Serial.print(F("E"));
           oled.clear();
-          oled.print_text_2x("Arrived early", 10, 10);  // đến đúng giờ
+          oled.print_text_2x("Arrived\n", 10, 10);  // đến đúng giờ
+          oled.print_text_2x("early", 12, 10);  // đến đúng giờ
           delay_millis(2000);
-        } else if (late_minutes <= 15) {
+        } else if (data.late_minutes <= 15) {
           Serial.print(F("O"));
           oled.clear();
           oled.print_text_2x("On Time", 10, 10);  // đến sớm
@@ -156,11 +152,11 @@ void Time() {
           Serial.print(F("L\n"));
           oled.clear();
           oled.print_text_2x("Late: ", 10, 10);
-          oled.print_int2x(late_minutes);
+          oled.print_int2x(data.late_minutes-15);
           oled.print_text2x("minutes");  // đến trễ
           delay_millis(2000);
         }
-      } else if (data.tm.Hour < 21 || data.tm.Hour > 22) {
+      } else if (data.tm.Hour < 7 || data.tm.Hour > 9) {
         Serial.print(F("Time out"));
         oled.clear();
         oled.print_text_2x("Time out", 10, 10);  // thời gian điểm danh đã kết thúc
@@ -183,17 +179,19 @@ void SDcard() {
     if (data.finger_id != 0 || data.tempC != 0) {
       Serial.println(F("Opening file"));
       if (data.finger_id != 0) {
+        dataFile.print(F("ID: "));        
         dataFile.print(data.finger_id);  // Lưu id vào file
       }
-      dataFile.print(",");  // Phân cách giữa id và tempC
+      dataFile.print(F(","));  // Phân cách giữa id và tempC
       if (data.tempC != 0) {
+        dataFile.print(F("TEMP: "));
         dataFile.print(data.tempC);  // Lưu tempC vào file
       }
-      dataFile.print(",");  // Phân cách
+      dataFile.print(F(","));  // Phân cách
       dataFile.print(data.tm.Hour);
-      dataFile.print(":");
+      dataFile.print(F(":"));
       dataFile.print(data.tm.Minute);
-      dataFile.print(":");
+      dataFile.print(F(":"));
       dataFile.print(data.tm.Second);
       dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
     }
