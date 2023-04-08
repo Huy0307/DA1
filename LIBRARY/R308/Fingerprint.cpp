@@ -38,16 +38,6 @@ void fingerprintSetup() {
 *@retval (kết quả trả về)
 *-	Hàm trả về giá trị số nguyên, ký tự và số thực
 */
-uint8_t readnumber() {
-  unsigned long currentMillis = millis();
-  uint8_t num = 0;
-  while (num == 0) {
-    while (millis() - currentMillis < 5000)
-        ;
-    num = Serial.parseInt();
-  }
-  return num;
-}
 /**
 *@brief (Mô tả chức năng)
 -	Nhập dữ liệu vân tay vào bộ nhớ Flash.
@@ -55,7 +45,7 @@ uint8_t readnumber() {
 -	id: Giá trị id của vân tay
 *@retval (kết quả trả về)
 */
-uint8_t getFingerprintEnroll(uint8_t &id) {
+uint8_t getFingerprintEnroll(uint8_t &id, byte &s) {
 
   int p = -1;
   Serial.print(F("Waiting for valid finger to enroll as #"));
@@ -70,11 +60,14 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
         Serial.println(F("."));
         break;
       case FINGERPRINT_PACKETRECIEVEERR:
+        s = 0;
         break;
       case FINGERPRINT_IMAGEFAIL:
+        s = 0;
         break;
       default:
         Serial.println(F("Error Occured!!"));
+        s = 0;
         break;
     }
   }
@@ -87,16 +80,20 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
       Serial.println(F("Image converted"));
       break;
     case FINGERPRINT_IMAGEMESS:
+      s = 0;
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
+      s = 0;
       return p;
     case FINGERPRINT_FEATUREFAIL:
+      s = 0;
       return p;
     case FINGERPRINT_INVALIDIMAGE:
+      s = 0;
       return p;
     default:
       Serial.println(F("Error Occured!!"));
-
+      s = 0;
       return p;
   }
   Serial.println(F("Remove finger"));
@@ -116,11 +113,14 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
         Serial.print(F("."));
         break;
       case FINGERPRINT_PACKETRECIEVEERR:
+        s = 0;
         break;
       case FINGERPRINT_IMAGEFAIL:
+        s = 0;
         break;
       default:
         Serial.println(F("Error Occured!!"));
+        s = 0;
         break;
     }
   }
@@ -133,15 +133,20 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
       Serial.println(F("Image converted"));
       break;
     case FINGERPRINT_IMAGEMESS:
+      s = 0;
       return p;
     case FINGERPRINT_PACKETRECIEVEERR:
+      s = 0;
       return p;
     case FINGERPRINT_FEATUREFAIL:
+      s = 0;
       return p;
     case FINGERPRINT_INVALIDIMAGE:
+      s = 0;
       return p;
     default:
       Serial.println(F("Error Occured!!"));
+      s = 0;
       return p;
   }
 
@@ -153,11 +158,14 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Prints matched!"));
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    s = 0;
     return p;
   } else if (p == FINGERPRINT_ENROLLMISMATCH) {
+    s = 0;
     return p;
   } else {
     Serial.println(F("Error Occured!!"));
+    s = 0;
     return p;
   }
 
@@ -166,14 +174,19 @@ uint8_t getFingerprintEnroll(uint8_t &id) {
   p = finger.storeModel(id);
   if (p == FINGERPRINT_OK) {
     Serial.println(F("Stored!"));
+    s = 1;
   } else if (p == FINGERPRINT_PACKETRECIEVEERR) {
+    s = 0;
     return p;
   } else if (p == FINGERPRINT_BADLOCATION) {
+    s = 0;
     return p;
   } else if (p == FINGERPRINT_FLASHERR) {
+    s = 0;
     return p;
   } else {
     Serial.println(F("Error Occured!!"));
+    s = 0;
     return p;
   }
 

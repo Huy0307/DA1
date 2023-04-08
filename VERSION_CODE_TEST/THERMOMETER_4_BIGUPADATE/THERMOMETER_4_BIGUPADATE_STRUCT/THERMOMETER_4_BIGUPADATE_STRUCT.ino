@@ -18,12 +18,17 @@ const byte buttonPin2 = 3;  // Sử dụng chân số 13 để kết nối với
 const byte enPin = 4;
 const byte sensorPin = 5;
 const byte buzzer = 8;
+const unsigned char bitmap_icon_3dcube[] PROGMEM = {
+  0x00, 0x00, 0x01, 0x80, 0x07, 0x60, 0x19, 0x18, 0x61, 0x06, 0x51, 0x0a, 0x45, 0xa2, 0x41, 0x02,
+  0x45, 0x22, 0x41, 0x02, 0x45, 0xa2, 0x51, 0x0a, 0x61, 0x06, 0x19, 0x18, 0x07, 0x60, 0x01, 0x80
+};
 byte mode = 2;
 struct Data {
   float tempC;
   uint8_t id;
   uint8_t finger_id;
   tmElements_t tm;
+  byte s;
 };
 Data data;
 volatile bool buttonPressed1 = false;
@@ -121,7 +126,7 @@ void readFinger() {
     if (data.id == 0) {  // ID #0 not allowed, try again!
       return;
     }
-    getFingerprintEnroll(data.id);
+    getFingerprintEnroll(data.id, data.s);
     oled.clear();
     oled.set2X();
     oled.setCursor(0, 10);
@@ -163,15 +168,28 @@ void readFinger() {
 }
 void Time() {
   if (RTC.read(data.tm)) {
-    oled.clear();
+    oled.set1X();
+    oled.println(F("\n"));
     oled.set2X();
-    oled.setCursor(0, 10);
+    oled.setCursor(0, 0);  // Set cursor to first row
     oled.print(F("Time: \n"));
+    oled.set2X();
+    oled.setCursor(0, 20);  // Set cursor to second row
+    // Update time value
+    if (data.tm.Hour < 10) {
+      oled.print('0');  // Add leading zero for single digit hour values
+    }
     oled.print(data.tm.Hour);
-    oled.print(F(":"));
+    oled.print(':');
+    if (data.tm.Minute < 10) {
+      oled.print('0');  // Add leading zero for single digit minute values
+    }
     oled.print(data.tm.Minute);
-    oled.print(F(":"));
-    oled.println(data.tm.Second);
+    oled.print(':');
+    if (data.tm.Second < 10) {
+      oled.print('0');  // Add leading zero for single digit second values
+    }
+    oled.print(data.tm.Second);
     delay_millis(1000);
     if (data.finger_id != 0) {
       if (data.tm.Hour >= 21 && data.tm.Hour < 22) {

@@ -3,9 +3,27 @@
 #include <DS1307RTC.h>
 #include "Fingerprint.h"
 #include "oled_display.h"
+#include <Keypad.h>
+#include <Keypad_I2C.h>
 #include <SD.h>
 #include <SPI.h>
 Adafruit_MLX90614 mlx = Adafruit_MLX90614();
+const byte numRows = 4;  // số lượng hàng trên keypad
+const byte numCols = 4;  // số lượng cột trên keypad
+// sử dụng keypad để điều khiển menu
+char customKey;
+#define I2CADDR 0x38
+char keys[numRows][numCols] = {
+  { '1', '2', '3', 'A' },
+  { '4', '5', '6', 'B' },
+  { '7', '8', '9', 'C' },
+  { '*', '0', '#', 'D' }
+};
+// phím được gán trên các hàng và cột
+byte rowPins[numRows] = { 7, 6, 5, 4 };  // các hàng từ 0 đến 3
+byte colPins[numCols] = { 3, 2, 1, 0 };  // các cột từ 0 đến 3
+// khởi tạo Keypad
+Keypad_I2C customKeypad(makeKeymap(keys), rowPins, colPins, numRows, numCols, I2CADDR);
 const int chipSelect = 10;  // chọn chân kết nối với SD card reader
 const byte buttonPin1 = 2;  // Sử dụng chân số 13 để kết nối với nút bấm
 const byte buttonPin2 = 3;  // Sử dụng chân số 13 để kết nối với nút bấm
@@ -14,12 +32,13 @@ const byte sensorPin = 5;
 const byte buzzer = 8;
 oled_display oled;
 struct Data {
-  float tempC;
-  uint8_t id;
-  uint8_t finger_id;
+  float tempC = 0;
+  uint8_t id = 0;
+  uint8_t finger_id = 0;
   tmElements_t tm;
   byte mode = 2;
   int late_minutes;
+  byte s;
 };
 Data data;
 volatile bool buttonPressed1 = false;
@@ -30,10 +49,38 @@ void delay_millis(unsigned long ms) {
     // Chờ
   }
 }
+uint8_t readnumber() {
+  unsigned long startTime = millis(); // thời gian bắt đầu
+  String inputString; 
+  uint8_t num = 0;
+  while (num == 0 && millis() - startTime < 7000) { // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 10 giây
+    char key = customKeypad.getKey();
+    if (key) {
+      if (key >= '0' && key <= '9') { // chỉ xử lý các phím số
+        inputString += key; // thêm giá trị mới vào chuỗi
+      } else if (key == '#') {
+        if (inputString.length() > 0) {
+          num = inputString.toInt(); // chuyển đổi chuỗi thành số
+        }
+      } else if (key == '*') {
+        inputString = ""; // xóa dữ liệu nhập vào
+      }
+    }
+  }
+  
+  if (num == 0) { // nếu không nhận được dữ liệu
+    return 255; // trả về một giá trị khác để biểu thị không nhận được dữ liệu
+  } else {
+    return num;
+  }
+}
+
 void setup() {
   Serial.begin(9600);
-  SPI.begin();// Bắt đầu SPI
-  pinMode(chipSelect, OUTPUT);// Chọn thẻ nhớ SD bằng chân kết nối
+  Wire.begin();
+  customKeypad.begin(makeKeymap(keys));
+  SPI.begin();                  // Bắt đầu SPI
+  pinMode(chipSelect, OUTPUT);  // Chọn thẻ nhớ SD bằng chân kết nối
   oled.begin();
   fingerprintSetup();
   pinMode(sensorPin, INPUT);
@@ -44,17 +91,18 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(buttonPin2), buttonInterrupt2, FALLING);
   digitalWrite(buzzer, LOW);
   pinMode(enPin, OUTPUT);
-  digitalWrite(enPin, HIGH);// Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
+  digitalWrite(enPin, HIGH);  // Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
   if (!SD.begin(chipSelect)) {
     Serial.println(F("Không tìm thấy thẻ nhớ SD."));
-    return;}
+    return;
+  }
   mlx.begin();
 }
 void loop() {
   readstate();
   readFinger();
-  readTemp();// Check if object detected by YS-29 sensor
-  Time();// oled current time
+  readTemp();  // Check if object detected by YS-29 sensor
+  Time();      // oled current time
   SDcard();
   data.tempC = 0;
   data.finger_id = 0;
@@ -90,23 +138,47 @@ void readTemp() {
     digitalWrite(buzzer, LOW);
     oled.clear();
     oled.print_text_2x("\n", 0, 0);
-    oled.print_text_2x("Temp: \n", 40, 40);
+    oled.print_text_2x("Temp \n", 40, 40);
     oled.print_float_2x(data.tempC, 30, 40);
     // Update OLED oled
     delay_millis(1000);
+    oled.clear();
   }
 }
 void readFinger() {
   if (data.mode == 1) {
-    data.id = readnumber();
-    if (data.id == 0) {  // ID #0 not allowed, try again!
-      return;
-    }
-    getFingerprintEnroll(data.id);
     oled.clear();
-    oled.print_text_2x("ENROLLED!!", 0, 10);
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_text_1x("1. PLACE FINGER\n", 10, 10);
+    oled.print_text_1x("2. REMOVE FINGER\n", 10, 15);
+    oled.print_text_1x("3. PLACE AGAIN", 10, 20);
+    delay_millis(2000);
+    oled.clear();
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
     delay_millis(1000);
-    data.mode = 2;
+    data.id = readnumber();
+    if (data.id != 255) {
+      oled.clear();
+      oled.print_uint8t_2x(data.id, 10, 20);
+      delay_millis(1000);
+      getFingerprintEnroll(data.id, data.s);
+      if (data.s == 1) {
+        oled.clear();
+        oled.print_text_2x("Enroll!!", 10, 10);
+        delay_millis(1000);
+        oled.clear();
+        data.mode = 2;
+      } else if (data.s == 0) {
+        oled.clear();
+        oled.print_text_2x("FAILED!!", 10, 10);
+        delay_millis(1000);
+        data.mode = 1;
+      }
+    } else {
+      data.mode = 2;
+    }
+    oled.clear();
   }
   if (data.mode == 2) {
     getFingerprintID(data.finger_id);
@@ -121,10 +193,11 @@ void readFinger() {
   }
   if (data.mode == 3) {
     data.id = readnumber();
-    if (data.id == 0) {  // ID #0 not allowed, try again!
-      return;
+    if (data.id != 0) {  // ID #0 not allowed, try again!
+      deleteFingerprint(data.id);
+    } else {
+      data.mode = 2;
     }
-    deleteFingerprint(data.id);
     oled.clear();
     oled.print_text_2x("DELETED!", 0, 10);
     delay_millis(1000);
@@ -141,35 +214,52 @@ void Time() {
           Serial.print(F("E"));
           oled.clear();
           oled.print_text_2x("Arrived\n", 10, 10);  // đến đúng giờ
-          oled.print_text_2x("early", 12, 10);  // đến đúng giờ
+          oled.print_text_2x("early", 12, 10);      // đến đúng giờ
           delay_millis(2000);
+          oled.clear();
         } else if (data.late_minutes <= 15) {
           Serial.print(F("O"));
           oled.clear();
           oled.print_text_2x("On Time", 10, 10);  // đến sớm
           delay_millis(2000);
+          oled.clear();
         } else {
           Serial.print(F("L\n"));
           oled.clear();
           oled.print_text_2x("Late: ", 10, 10);
-          oled.print_int2x(data.late_minutes-15);
+          oled.print_int2x(data.late_minutes - 15);
           oled.print_text2x("minutes");  // đến trễ
           delay_millis(2000);
+          oled.clear();
         }
       } else if (data.tm.Hour < 7 || data.tm.Hour > 9) {
         Serial.print(F("Time out"));
         oled.clear();
         oled.print_text_2x("Time out", 10, 10);  // thời gian điểm danh đã kết thúc
         delay_millis(2000);
+        oled.clear();
       }
     }
-    oled.clear();
-    oled.print_text_2x("Time: \n", 0, 10);
-    oled.print_int2x(data.tm.Hour);
+    oled.print_text1x("\n");
+    oled.print_text_2x("Time: \n", 0, 0);
+    if (data.tm.Hour < 10) {
+      oled.print_text_2x("0", 0, 20);  // Add leading zero for single digit hour values
+    }
+    oled.print_int_2x(data.tm.Hour, 0, 20);
     oled.print_text2x(":");
+    if (data.tm.Minute < 10) {
+      oled.print_text2x("0");  // Add leading zero for single digit minute values
+    }
     oled.print_int2x(data.tm.Minute);
     oled.print_text2x(":");
+    if (data.tm.Second < 10) {
+      oled.print_text2x("0");  // Add leading zero for single digit second values
+    }
     oled.print_int2x(data.tm.Second);
+    oled.print_text1x("\n");
+    oled.print_text2x("\n");
+    oled.print_text1x("F1: FINGER\n");
+    oled.print_text1x("F2: THEMOMETER");
     delay_millis(1000);
   }
 }
@@ -179,7 +269,7 @@ void SDcard() {
     if (data.finger_id != 0 || data.tempC != 0) {
       Serial.println(F("Opening file"));
       if (data.finger_id != 0) {
-        dataFile.print(F("ID: "));        
+        dataFile.print(F("ID: "));
         dataFile.print(data.finger_id);  // Lưu id vào file
       }
       dataFile.print(F(","));  // Phân cách giữa id và tempC
