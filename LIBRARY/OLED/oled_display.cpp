@@ -1,5 +1,4 @@
 #include "oled_display.h"
-
 oled_display::oled_display() {}
 #define I2C_ADDRESS 0x3C
 void oled_display::begin() {
@@ -35,6 +34,7 @@ void oled_display::print_text_2x(const char *str, int x, int y) {
   oled.setCursor(x, y);
   oled.print(str);
 }
+
 
 void oled_display::print_int_2x(int num, int x, int y) {
   oled.set2X();

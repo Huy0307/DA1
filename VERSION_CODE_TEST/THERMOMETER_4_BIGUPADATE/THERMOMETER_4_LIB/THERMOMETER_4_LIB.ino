@@ -36,7 +36,11 @@ struct Data {
   uint8_t id = 0;
   uint8_t finger_id = 0;
   tmElements_t tm;
-  byte mode = 2;
+  int mode = 2;
+  byte to;
+  byte e;
+  byte l;
+  byte o;
   int late_minutes;
   byte s;
 };
@@ -50,31 +54,31 @@ void delay_millis(unsigned long ms) {
   }
 }
 uint8_t readnumber() {
-  unsigned long startTime = millis(); // thời gian bắt đầu
-  String inputString; 
+  unsigned long startTime = millis();  // thời gian bắt đầu
+  String inputString;
   uint8_t num = 0;
-  while (num == 0 && millis() - startTime < 7000) { // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 10 giây
+  while (num == 0 && millis() - startTime < 7000) {  // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 10 giây
     char key = customKeypad.getKey();
     if (key) {
-      if (key >= '0' && key <= '9') { // chỉ xử lý các phím số
-        inputString += key; // thêm giá trị mới vào chuỗi
+      Serial.print(key);
+      if (key >= '0' && key <= '9') {  // chỉ xử lý các phím số
+        inputString += key;            // thêm giá trị mới vào chuỗi
       } else if (key == '#') {
         if (inputString.length() > 0) {
-          num = inputString.toInt(); // chuyển đổi chuỗi thành số
+          num = inputString.toInt();  // chuyển đổi chuỗi thành số
         }
       } else if (key == '*') {
-        inputString = ""; // xóa dữ liệu nhập vào
+        inputString = "";  // xóa dữ liệu nhập vào
       }
     }
   }
-  
-  if (num == 0) { // nếu không nhận được dữ liệu
-    return 255; // trả về một giá trị khác để biểu thị không nhận được dữ liệu
+
+  if (num == 0) {  // nếu không nhận được dữ liệu
+    return 255;    // trả về một giá trị khác để biểu thị không nhận được dữ liệu
   } else {
     return num;
   }
 }
-
 void setup() {
   Serial.begin(9600);
   Wire.begin();
@@ -119,6 +123,9 @@ void readstate() {
     buttonPressed1 = false;
     data.mode = 3;
     Serial.print(data.mode);
+    oled.clear();
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_int_2x(data.mode, 60, 15);
     delay_millis(1000);
   }
   byte buttonState2 = digitalRead(buttonPin2);
@@ -126,6 +133,9 @@ void readstate() {
     buttonPressed2 = false;
     data.mode = 1;
     Serial.print(data.mode);
+    oled.clear();
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_int_2x(data.mode, 60, 15);
     delay_millis(1000);
   }
 }
@@ -137,7 +147,6 @@ void readTemp() {
     delay_millis(250);
     digitalWrite(buzzer, LOW);
     oled.clear();
-    oled.print_text_2x("\n", 0, 0);
     oled.print_text_2x("Temp \n", 40, 40);
     oled.print_float_2x(data.tempC, 30, 40);
     // Update OLED oled
@@ -149,19 +158,16 @@ void readFinger() {
   if (data.mode == 1) {
     oled.clear();
     oled.print_text_1x("\n", 1, 1);
-    oled.print_text_1x("1. PLACE FINGER\n", 10, 10);
-    oled.print_text_1x("2. REMOVE FINGER\n", 10, 15);
-    oled.print_text_1x("3. PLACE AGAIN", 10, 20);
+    oled.print_text_1x("1. PLACE FINGER\n", 10, 15);
+    oled.print_text_1x("2. REMOVE FINGER\n", 10, 20);
+    oled.print_text_1x("3. PLACE AGAIN", 10, 25);
     delay_millis(2000);
     oled.clear();
     oled.print_text_1x("\n", 1, 1);
     oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
-    delay_millis(1000);
     data.id = readnumber();
     if (data.id != 255) {
-      oled.clear();
-      oled.print_uint8t_2x(data.id, 10, 20);
-      delay_millis(1000);
+      oled.print_uint8t_2x(data.id, 10, 25);
       getFingerprintEnroll(data.id, data.s);
       if (data.s == 1) {
         oled.clear();
@@ -178,30 +184,36 @@ void readFinger() {
     } else {
       data.mode = 2;
     }
+    delay_millis(1000);
     oled.clear();
   }
   if (data.mode == 2) {
     getFingerprintID(data.finger_id);
     if (data.finger_id != 0) {
       oled.clear();
-      oled.print_text_1x("\n", 1, 1);
-      oled.print_text_1x("Found a print match!\n", 10, 10);
-      oled.print_text_1x("Match found ID\n", 10, 15);
-      oled.print_uint8t_1x(data.finger_id, 10, 20);
+      oled.print_text1x("\n");
+      oled.print_text_1x("Found a print match!\n", 10, 20);
+      oled.print_text_1x("Match found ID\n", 10, 25);
+      oled.print_uint8t_1x(data.finger_id, 10, 30);
       delay_millis(1000);
     }
   }
   if (data.mode == 3) {
+
+    // oled.print_text_1x("\n", 1, 1);
+    // oled.print_text_1x("Waiting ID #\n", 10, 10);
     data.id = readnumber();
-    if (data.id != 0) {  // ID #0 not allowed, try again!
+    if (data.id != 255) {  // ID #0 not allowed, try again!
       deleteFingerprint(data.id);
+      oled.clear();
+      oled.print_text_1x("\n", 1, 1);
+      oled.print_text_2x("DELETE ID\n", 10, 10);
+      oled.print_uint8t_2x(data.id, 10, 25);
+      delay_millis(2000);
+      data.mode = 2;
     } else {
       data.mode = 2;
     }
-    oled.clear();
-    oled.print_text_2x("DELETED!", 0, 10);
-    delay_millis(1000);
-    data.mode = 2;
   }
 }
 void Time() {
@@ -211,6 +223,7 @@ void Time() {
         // tính thời gian điểm danh so với 21h15p
         data.late_minutes = (data.tm.Hour - 8) * 60 + data.tm.Minute;
         if (data.late_minutes <= 0) {
+          data.e = 1;
           Serial.print(F("E"));
           oled.clear();
           oled.print_text_2x("Arrived\n", 10, 10);  // đến đúng giờ
@@ -218,12 +231,14 @@ void Time() {
           delay_millis(2000);
           oled.clear();
         } else if (data.late_minutes <= 15) {
+          data.o = 1;
           Serial.print(F("O"));
           oled.clear();
           oled.print_text_2x("On Time", 10, 10);  // đến sớm
           delay_millis(2000);
           oled.clear();
         } else {
+          data.l = 1;
           Serial.print(F("L\n"));
           oled.clear();
           oled.print_text_2x("Late: ", 10, 10);
@@ -233,6 +248,7 @@ void Time() {
           oled.clear();
         }
       } else if (data.tm.Hour < 7 || data.tm.Hour > 9) {
+        data.to = 1;
         Serial.print(F("Time out"));
         oled.clear();
         oled.print_text_2x("Time out", 10, 10);  // thời gian điểm danh đã kết thúc
@@ -283,6 +299,17 @@ void SDcard() {
       dataFile.print(data.tm.Minute);
       dataFile.print(F(":"));
       dataFile.print(data.tm.Second);
+      dataFile.print(F(","));  // Phân cách
+      if (data.e == 1) {
+        dataFile.print(F("EARLY"));
+      } else if (data.o == 1) {
+        dataFile.print(F("ON TIME"));
+      } else if (data.l == 1) {
+        dataFile.print(F("LATE: "));
+        dataFile.print(data.late_minutes - 15);
+      } else if (data.to == 1) {
+        dataFile.print(F("TIME OUT"));        
+      }
       dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
     }
     dataFile.close();  // Đóng file

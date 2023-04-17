@@ -18,7 +18,7 @@ void readSensor(int &sensorValue) {
 void loop() {
   readSensor(sensorValue);
   if (sensorValue == LOW) {
-    Serial.print("Detected");
+    Serial.print("Detected\n");
     delay(1000);
   }
 }
