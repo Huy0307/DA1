@@ -122,7 +122,7 @@ void readTemp() {
 }
 void readFinger() {
   if (mode == 1) {
-    data.id = readnumber();
+    // data.id = readnumber();
     if (data.id == 0) {  // ID #0 not allowed, try again!
       return;
     }
@@ -153,7 +153,7 @@ void readFinger() {
     }
   }
   if (mode == 3) {
-    data.id = readnumber();
+    // data.id = readnumber();
     if (data.id == 0) {  // ID #0 not allowed, try again!
       return;
     }

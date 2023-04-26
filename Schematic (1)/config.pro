@@ -1,0 +1,1 @@
+﻿edge_display_quality very_high
