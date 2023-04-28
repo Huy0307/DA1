@@ -48,6 +48,7 @@ struct Data {
   byte e;
   byte l;
   byte o;
+  int pass;
   int late_minutes;
   byte s;
 };
@@ -203,28 +204,35 @@ void readTemp() {
 void readFinger() {
   if (data.mode == 1) {
     oled.clear();
-    oled.print_text_1x("\n", 1, 1);
-    oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
-    data.id = readnumber();
-    if (data.id != 255) {
-      oled.print_uint8t_2x(data.id, 10, 25);
-      getFingerprintEnroll(data.id, data.s);
-      if (data.s == 1) {
-        oled.clear();
-        oled.print_text_2x("Enroll!!", 10, 10);
-        delay_millis(1000);
-        oled.clear();
+    data.pass = readnumber();
+    if (data.pass == 12) {
+      oled.clear();
+      oled.print_text_1x("\n", 1, 1);
+      oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
+      data.id = readnumber();
+      if (data.id != 255) {
+        oled.print_uint8t_2x(data.id, 10, 25);
+        getFingerprintEnroll(data.id, data.s);
+        if (data.s == 1) {
+          oled.clear();
+          oled.print_text_2x("Enroll!!", 10, 10);
+          delay_millis(1000);
+          oled.clear();
+          data.mode = 2;
+        } else if (data.s == 0) {
+          oled.clear();
+          oled.print_text_2x("FAILED!!", 10, 10);
+          delay_millis(1000);
+          data.mode = 1;
+        }
+      } else {
         data.mode = 2;
-      } else if (data.s == 0) {
-        oled.clear();
-        oled.print_text_2x("FAILED!!", 10, 10);
-        delay_millis(1000);
-        data.mode = 1;
       }
+      data.redrawMenu = true;
+      oled.clear();
     } else {
       data.mode = 2;
     }
-    data.redrawMenu = true;
     oled.clear();
   }
   if (data.mode == 2) {
@@ -241,20 +249,30 @@ void readFinger() {
     }
   }
   if (data.mode == 3) {
-    data.id = readnumber();
-    if (data.id != 255) {  // ID #0 not allowed, try again!
-      deleteFingerprint(data.id);
+    oled.clear();
+    data.pass = readnumber();
+    if (data.pass == 13) {
       oled.clear();
       oled.print_text_1x("\n", 1, 1);
-      oled.print_text_2x("DELETE ID\n", 10, 10);
-      oled.print_uint8t_2x(data.id, 10, 25);
-      delay_millis(2000);
-      oled.clear();
-      data.mode = 2;
+      oled.print_text_1x("Waiting for...\n", 10, 10);
+      data.id = readnumber();
+      if (data.id != 255) {  // ID #0 not allowed, try again!
+        deleteFingerprint(data.id);
+        oled.clear();
+        oled.print_text_1x("\n", 1, 1);
+        oled.print_text_2x("DELETE ID\n", 10, 10);
+        oled.print_uint8t_2x(data.id, 10, 25);
+        delay_millis(2000);
+        oled.clear();
+        data.mode = 2;
+      } else {
+        data.mode = 2;
+      }
+      data.redrawMenu = true;
     } else {
       data.mode = 2;
     }
-    data.redrawMenu = true;
+    oled.clear();
   }
 }
 void Time() {
