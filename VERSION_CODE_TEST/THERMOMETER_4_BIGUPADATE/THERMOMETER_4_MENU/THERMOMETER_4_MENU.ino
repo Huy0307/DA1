@@ -63,19 +63,41 @@ uint8_t readnumber() {
   unsigned long startTime = millis();  // thời gian bắt đầu
   String inputString;
   uint8_t num = 0;
-  while (num == 0 && millis() - startTime < 7000) {  // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 10 giây
+  bool keyPressed = false;  // biến cờ kiểm tra có ký tự mới được nhập vào hay không
+
+  while (num == 0 && millis() - startTime < 7000) {  // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 7 giây
     key = customKeypad.getKey();
     if (key) {
-      Serial.print(key);
+      keyPressed = true;  // đặt biến cờ khi có ký tự mới được nhập vào
       if (key >= '0' && key <= '9') {  // chỉ xử lý các phím số
         inputString += key;            // thêm giá trị mới vào chuỗi
+        int x = inputString.toInt();
+        oled.print_int_1x(x, 0, 40);  // hiển thị số lên màn hình
       } else if (key == '#') {
         if (inputString.length() > 0) {
           num = inputString.toInt();  // chuyển đổi chuỗi thành số
         }
       } else if (key == '*') {
-        inputString = "";  // xóa dữ liệu nhập vào
+        if (inputString.length() > 0) {
+          inputString.remove(inputString.length() - 1);  // Xóa ký tự cuối cùng
+          oled.clear();  // Xóa mật khẩu đã hiển thị trên màn hình
+          if (data.mode == 1) {
+            oled.print_text_1x("\n", 1, 1);
+            oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
+          } else if (data.mode == 3) {
+            oled.print_text_1x("\n", 1, 1);
+            oled.print_text_1x("Waiting for...\n", 10, 10);
+          }
+          for (int i = inputString.length() - 1; i >= 0; i--) {
+            int y = inputString.toInt();
+            oled.print_int_1x(y, 0, 40);  // hiển thị số lên màn hình
+          }
+        }
       }
+    }
+    if (keyPressed) {
+      startTime = millis();  // cập nhật thời gian bắt đầu khi có ký tự mới được nhập vào
+      keyPressed = false;   // đặt lại biến cờ
     }
   }
 
@@ -85,10 +107,46 @@ uint8_t readnumber() {
     return num;
   }
 }
+int readPass() {
+  unsigned long startTime = millis();
+  String passString;
+  uint8_t num = 0;
+  while (num == 0 && millis() - startTime < 7000) {
+    key = customKeypad.getKey();
+    if (key) {
+      if (key >= '0' && key <= '9') {
+        passString += key;
+        Serial.println(key);
+        oled.print_text1x("*");  // Hiển thị dấu "*" cho mỗi ký tự nhập vào
+      } else if (key == '#') {
+        if (passString.length() > 0) {
+          return passString.toInt();
+        }
+      } else if (key == '*') {
+        if (passString.length() > 0) {
+          passString.remove(passString.length() - 1);  // Xóa ký tự cuối cùng
+          Serial.println(passString);
+          oled.clear();  // Xóa mật khẩu đã hiển thị trên màn hình
+          oled.print_text_1x("\n", 1, 1);
+          oled.print_text_2x("Enter pass: \n", 0, 10);
+          for (int i = passString.length() - 1; i >= 0; i--) {
+            oled.print_text1x("*");  // Hiển thị dấu "*" cho mỗi ký tự nhập vào
+          }
+        }
+      }
+    }
+  }
+  if (num == 0) {  // nếu không nhận được dữ liệu
+    return 255;    // trả về một giá trị khác để biểu thị không nhận được dữ liệu
+    oled.clear();
+  } else {
+    return num;
+    oled.clear();
+  }
+}
 void readKey() {
   // đọc phím nhấn từ keypad
   key = customKeypad.getKey();
-
   // điều khiển menu
   if (data.menuMode) {
     if (data.redrawMenu) {
@@ -204,7 +262,10 @@ void readTemp() {
 void readFinger() {
   if (data.mode == 1) {
     oled.clear();
-    data.pass = readnumber();
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_text_2x("Enter pass: \n", 0, 10);
+    delay_millis(1000);
+    data.pass = readPass();
     if (data.pass == 12) {
       oled.clear();
       oled.print_text_1x("\n", 1, 1);
@@ -240,9 +301,9 @@ void readFinger() {
     if (data.finger_id != 0) {
       oled.clear();
       oled.print_text1x("\n");
-      oled.print_text_1x("Found a print match!\n", 10, 20);
-      oled.print_text_1x("Match found ID\n", 10, 25);
-      oled.print_uint8t_1x(data.finger_id, 10, 30);
+      // oled.print_text_1x("Found a print match!\n", 10, 20);
+      oled.print_text_1x("Match found ID\n", 10, 20);
+      oled.print_uint8t_1x(data.finger_id, 10, 25);
       data.redrawMenu = true;
       delay_millis(1000);
       oled.clear();
@@ -250,7 +311,10 @@ void readFinger() {
   }
   if (data.mode == 3) {
     oled.clear();
-    data.pass = readnumber();
+    oled.print_text_1x("\n", 1, 1);
+    oled.print_text_2x("Enter pass: \n", 0, 10);
+    delay_millis(1000);
+    data.pass = readPass();
     if (data.pass == 13) {
       oled.clear();
       oled.print_text_1x("\n", 1, 1);
@@ -349,6 +413,13 @@ void SDcard() {
         dataFile.print(data.tempC);  // Lưu tempC vào file
       }
       dataFile.print(F(","));  // Phân cách
+      dataFile.print(data.tm.Day);
+      dataFile.print(F("-"));
+      dataFile.print(data.tm.Month);
+      dataFile.print(F("-"));
+      dataFile.print(tmYearToCalendar(data.tm.Year));
+      dataFile.print(F(","));
+      dataFile.print(F(" "));
       dataFile.print(data.tm.Hour);
       dataFile.print(F(":"));
       dataFile.print(data.tm.Minute);

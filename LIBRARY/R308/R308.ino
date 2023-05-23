@@ -4,7 +4,7 @@ int buttonState = HIGH;      // Trạng thái ban đầu của nút bấm (nút 
 int lastButtonState = HIGH;  // Trạng thái trước đó của nút bấm
 uint8_t id;
 uint8_t finger_id;
-byte mode = 1;
+byte mode = 2;
 byte r;
 byte again;
 byte s;
@@ -55,6 +55,7 @@ void loop() {
     delay(2000);
   } else if (mode == 2) {
     getFingerprintID(finger_id);
+    Serial.print(finger_id);
     delay(2000);
   } else if (mode == 3) {
     id = readnumber();
