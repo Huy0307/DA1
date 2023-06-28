@@ -68,7 +68,7 @@ uint8_t readnumber() {
   while (num == 0 && millis() - startTime < 7000) {  // vòng lặp cho đến khi nhận được dữ liệu hoặc đã trôi qua 7 giây
     key = customKeypad.getKey();
     if (key) {
-      keyPressed = true;  // đặt biến cờ khi có ký tự mới được nhập vào
+      keyPressed = true;               // đặt biến cờ khi có ký tự mới được nhập vào
       if (key >= '0' && key <= '9') {  // chỉ xử lý các phím số
         inputString += key;            // thêm giá trị mới vào chuỗi
         int x = inputString.toInt();
@@ -80,7 +80,7 @@ uint8_t readnumber() {
       } else if (key == '*') {
         if (inputString.length() > 0) {
           inputString.remove(inputString.length() - 1);  // Xóa ký tự cuối cùng
-          oled.clear();  // Xóa mật khẩu đã hiển thị trên màn hình
+          oled.clear();                                  // Xóa mật khẩu đã hiển thị trên màn hình
           if (data.mode == 1) {
             oled.print_text_1x("\n", 1, 1);
             oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
@@ -97,7 +97,7 @@ uint8_t readnumber() {
     }
     if (keyPressed) {
       startTime = millis();  // cập nhật thời gian bắt đầu khi có ký tự mới được nhập vào
-      keyPressed = false;   // đặt lại biến cờ
+      keyPressed = false;    // đặt lại biến cờ
     }
   }
 
@@ -197,7 +197,7 @@ void setup() {
   fingerprintSetup();
   pinMode(sensorPin, INPUT);
   pinMode(buzzer, OUTPUT);
-  digitalWrite(buzzer, LOW);
+  digitalWrite(buzzer, HIGH);
   pinMode(enPin, OUTPUT);
   digitalWrite(enPin, HIGH);  // Kích hoạt cảm biến bằng cách đưa chân EN lên mức HIGH
   if (!SD.begin(chipSelect)) {
@@ -247,12 +247,17 @@ void readTemp() {
   byte sensorValue = digitalRead(sensorPin);
   if (sensorValue == LOW) {
     data.tempC = mlx.readObjectTempC();
-    digitalWrite(buzzer, HIGH);
-    delay_millis(250);
     digitalWrite(buzzer, LOW);
+    delay_millis(250);
+    digitalWrite(buzzer, HIGH);
     oled.clear();
     oled.print_text_2x("Temp \n", 40, 40);
     oled.print_float_2x(data.tempC, 30, 40);
+    if (data.tempC >= 37.5) {
+      digitalWrite(buzzer, LOW);
+      delay_millis(1000);
+      digitalWrite(buzzer, HIGH);
+    }
     // Update OLED oled
     delay_millis(1000);
     oled.clear();
@@ -272,6 +277,9 @@ void readFinger() {
       oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
       data.id = readnumber();
       if (data.id != 255) {
+        oled.clear();
+        oled.print_text_1x("\n", 1, 1);
+        oled.print_text_1x("Waiting enroll ID #\n", 10, 10);
         oled.print_uint8t_2x(data.id, 10, 25);
         getFingerprintEnroll(data.id, data.s);
         if (data.s == 1) {
@@ -302,8 +310,8 @@ void readFinger() {
       oled.clear();
       oled.print_text1x("\n");
       // oled.print_text_1x("Found a print match!\n", 10, 20);
-      oled.print_text_1x("Match found ID\n", 10, 20);
-      oled.print_uint8t_1x(data.finger_id, 10, 25);
+      oled.print_text_2x("Found ID\n", 10, 20);
+      oled.print_uint8t_2x(data.finger_id, 10, 25);
       data.redrawMenu = true;
       delay_millis(1000);
       oled.clear();
@@ -344,7 +352,6 @@ void Time() {
     data.redrawMenu = true;
     if (data.finger_id != 0) {
       if (data.tm.Hour >= 7 && data.tm.Hour < 9) {
-        // tính thời gian điểm danh so với 21h15p
         data.late_minutes = (data.tm.Hour - 8) * 60 + data.tm.Minute;
         if (data.late_minutes <= 0) {
           data.e = 1;
@@ -426,17 +433,19 @@ void SDcard() {
       dataFile.print(F(":"));
       dataFile.print(data.tm.Second);
       dataFile.print(F(","));  // Phân cách
-      if (data.e == 1) {
-        dataFile.print(F("EARLY"));
-      } else if (data.o == 1) {
-        dataFile.print(F("ON TIME"));
-      } else if (data.l == 1) {
-        dataFile.print(F("LATE: "));
-        dataFile.print(data.late_minutes - 15);
-      } else if (data.to == 1) {
-        dataFile.print(F("TIME OUT"));
+      if (data.finger_id != 0) {
+        if (data.e == 1) {
+          dataFile.print(F("EARLY"));
+        } else if (data.o == 1) {
+          dataFile.print(F("ON TIME"));
+        } else if (data.l == 1) {
+          dataFile.print(F("LATE: "));
+          dataFile.print(data.late_minutes - 15);
+        } else if (data.to == 1) {
+          dataFile.print(F("TIME OUT"));
+        }
+        dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
       }
-      dataFile.println();  // Xuống dòng để lưu thông tin tiếp theo
     }
     dataFile.close();  // Đóng file
   } else {

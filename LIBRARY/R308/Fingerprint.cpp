@@ -25,8 +25,8 @@ void fingerprintSetup() {
   } else {
     Serial.println(F("Sensor not found"));
     while (1) {
-      while (millis() - currentMillis < 1)
-        ;
+      delay(1);
+      Serial.println(F("Sensor not found"));
     }
   }
 }

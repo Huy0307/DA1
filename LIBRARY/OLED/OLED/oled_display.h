@@ -2,7 +2,7 @@
 #define OLED_DISPLAY_H
 
 #include "SSD1306Ascii.h"
-#include "SSD1306AsciiAvrI2c.h"
+#include "SSD1306AsciiWire.h"
 
 class oled_display {
   public:
@@ -26,6 +26,6 @@ class oled_display {
     void print_uint8t2x(uint8_t num);
     void clear();
   private:
-    SSD1306AsciiAvrI2c oled;
+    SSD1306AsciiWire oled;
 };
 #endif

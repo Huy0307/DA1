@@ -2,6 +2,7 @@
 oled_display::oled_display() {}
 #define I2C_ADDRESS 0x3C
 void oled_display::begin() {
+  Wire.begin();
   oled.begin(&Adafruit128x64, I2C_ADDRESS);
   oled.setFont(Adafruit5x7);
 }
